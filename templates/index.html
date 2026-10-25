@@ -1,78 +1,163 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Senior Medication Reminder</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f6fa;
-            color: #243447;
-            margin: 0;
-            padding: 30px;
-        }
-
-        header {
-            text-align: center;
-            background-color: #dceeff;
-            padding: 25px;
-            border-radius: 12px;
-        }
-
-        h1 {
-            font-size: 32px;
-        }
-
-        main {
-            max-width: 700px;
-            margin: 30px auto;
-        }
-
-        .reminder {
-            background-color: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-
-        button {
-            font-size: 18px;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            background-color: #176b50;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:focus-visible {
-            outline: 3px solid #243447;
-            outline-offset: 3px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/medication-adder.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/medication-status.js') }}" defer></script>
 </head>
-
-<body>
-    <header>
-        <h1>My Medication Reminder</h1>
-        <p>Helping you stay on track with your medications.</p>
-    </header>
-
-    <main>
-        <section class="reminder">
-            <h2>Welcome!</h2>
-            <p>Your medication schedule will appear here.</p>
-
-            <h2>Today's Reminders</h2>
-            <p>You have no reminders to display yet.</p>
-
-            <button type="button" onclick="alert('Medication reminders are coming soon!')">
-                View My Medications
+<body class="dashboard-page">
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <h2>Senior Medication Reminder</h2>
+            <nav aria-label="Main navigation">
+                <a class="nav-link active" href="/" aria-current="page">Dashboard</a>
+                <button type="button" class="nav-link" data-coming-soon="Medications">Medications <small>Coming soon</small></button>
+                <button type="button" class="nav-link" data-coming-soon="Schedule">Schedule <small>Coming soon</small></button>
+            </nav>
+            <button type="button" class="account" data-coming-soon="My Account">
+                <span class="avatar" aria-hidden="true">SM</span>
+                <span><strong>My Account</strong><small>Demo profile</small></span>
             </button>
-        </section>
-    </main>
+        </aside>
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <h1>My Medication Reminder</h1>
+                <button class="settings-button" id="open-settings" type="button" aria-haspopup="dialog" aria-controls="accessibility-settings">
+                    <span aria-hidden="true">&#9881;</span> Settings
+                </button>
+            </header>
+            <section class="medications-section" aria-labelledby="medications-heading">
+                <div class="section-heading">
+                    <h2 id="medications-heading">My Medications</h2>
+                    <button class="add-medication-button" id="open-medication-adder" type="button" aria-haspopup="dialog" aria-controls="medication-adder">+ Add Medication</button>
+                </div>
+                <p class="section-description">Your daily medications, all in one place.</p>
+                <p id="status-sync-feedback" role="status"></p>
+                <ul class="medication-list" data-status-url="{{ url_for('main.medication_statuses') }}">
+                    {% for medication in medications %}
+                    <li class="medication-card" data-medication-id="{{ medication.id }}" data-scheduled-at="{{ medication.scheduled_at }}">
+                        <div class="medication-details">
+                            <h3>{{ medication.name }}</h3>
+                            <p>{{ medication.dosage }} per pill &middot; {{ medication.pills_per_day }} pill(s) per day</p>
+                            <p class="reminder-day">Reminder: {{ medication.reminder_day }}</p>
+                        </div>
+                        <div class="medication-schedule">
+                            <span class="schedule-label">Scheduled time</span>
+                            <time class="dose-time" datetime="{{ medication.scheduled_iso }}">{{ medication.scheduled_time }}</time>
+                            <span class="schedule-label scheduled-date">{{ medication.scheduled_label }}</span>
+                            <span class="status status-{{ medication.status }}">{{ medication.status|capitalize }}</span>
+                            <span class="late-label" {% if not medication.late_label %}hidden{% endif %}>{{ medication.late_label }}</span>
+                        </div>
+                        <div class="medication-actions">
+                            <form class="status-form" action="{{ url_for('main.update_status', medication_id=medication.id) }}" method="post">
+                                <input type="hidden" name="status" value="taken">
+                                <button type="submit" aria-label="Mark {{ medication.name }} as taken" {% if medication.status == 'taken' %}disabled{% endif %}>{{ 'Taken' if medication.status == 'taken' else 'Mark as taken' }}</button>
+                            </form>
+                            <form class="remove-medication-form" action="{{ url_for('main.delete_medication', medication_id=medication.id) }}" method="post" data-medication-name="{{ medication.name }}">
+                                <button class="remove-medication-button" type="submit" aria-label="Remove {{ medication.name }}">Remove</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="medication-card">No medications added yet. Select Add Medication to get started.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </main>
+    </div>
+    <dialog id="medication-adder" aria-labelledby="medication-adder-title">
+        <div class="medication-adder-header">
+            <h2 id="medication-adder-title">Add Medication</h2>
+            <button id="close-medication-adder" type="button" autofocus>Close</button>
+        </div>
+        <form id="medication-form" action="{{ url_for('main.add_medication') }}" method="post" novalidate>
+            <ol class="form-progress" aria-label="Medication form steps">
+                <li aria-current="step">Medication</li>
+                <li>Dosage</li>
+                <li>Pill count</li>
+                <li>Day</li>
+                <li>Time</li>
+            </ol>
+            <p id="medication-step-description" role="status">Step 1 of 5: Medication</p>
+            <div class="medication-step">
+                <label for="medication-name">Medication name</label>
+                <input id="medication-name" name="name" type="text" list="medication-options" maxlength="200" required placeholder="Type to search...">
+                <datalist id="medication-options">
+                    <option value="Atorvastatin (Lipitor)"></option>
+                    <option value="Amoxicillin (Amoxil)"></option>
+                    <option value="Metformin (Glucophage)"></option>
+                    <option value="Lisinopril (Prinivil)"></option>
+                    <option value="Albuterol (ProAir)"></option>
+                </datalist>
+            </div>
+            <div class="medication-step" hidden>
+                <label for="medication-dosage">What is the dose per pill?</label>
+                <input id="medication-dosage" name="dosage" type="text" list="dosage-options" maxlength="100" required placeholder="For example, 5 mg">
+                <datalist id="dosage-options">
+                    <option value="1 mg"></option><option value="5 mg"></option>
+                    <option value="10 mg"></option><option value="20 mg"></option><option value="25 mg"></option>
+                </datalist>
+            </div>
+            <div class="medication-step" hidden>
+                <label for="medication-pills">How many pills a day?</label>
+                <input id="medication-pills" name="pills_per_day" type="number" min="1" max="999" step="1" required>
+            </div>
+            <div class="medication-step" hidden>
+                <label for="medication-day">What day would you like to be reminded?</label>
+                <select id="medication-day" name="reminder_day" required>
+                    <option value="">Choose a day</option>
+                    <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                    <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+                </select>
+            </div>
+            <div class="medication-step" hidden>
+                <label for="medication-time">What time would you like to be reminded?</label>
+                <input id="medication-time" name="reminder_time" type="time" required>
+            </div>
+            <p id="medication-save-feedback" role="status" aria-live="polite"></p>
+            <div class="medication-form-controls">
+                <button id="medication-previous" type="button" hidden>Previous</button>
+                <button id="medication-next" type="button">Next</button>
+                <button id="medication-submit" type="submit" hidden>Add Medication</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog id="accessibility-settings" aria-labelledby="settings-title" aria-describedby="settings-description">
+        <h2 id="settings-title">Accessibility settings</h2>
+        <p id="settings-description">Changes apply immediately and are saved in this browser.</p>
+        <label class="setting-field" for="text-size">Text size
+            <select id="text-size">
+                <option value="100">Standard (100%)</option>
+                <option value="125">Large (125%)</option>
+                <option value="150">Extra large (150%)</option>
+                <option value="200">Largest (200%)</option>
+            </select>
+        </label>
+        <label class="setting-toggle"><input id="bold-text" type="checkbox"> Bold text</label>
+        <label class="setting-field" for="color-palette">Color palette
+            <select id="color-palette" aria-describedby="palette-help">
+                <option value="default">Default</option>
+                <option value="blue-orange">Blue and orange</option>
+                <option value="purple-teal">Purple and teal</option>
+                <option value="grayscale">Grayscale</option>
+            </select>
+        </label>
+        <p id="palette-help">Choose the colors you find easiest to distinguish. Status labels and symbols stay visible in every palette.</p>
+        <div class="palette-preview" aria-label="Status color preview">
+            <span class="status status-taken"><span aria-hidden="true">&#10003; </span>Taken</span>
+            <span class="status status-missed"><span aria-hidden="true">&#10005; </span>Missed</span>
+            <span class="status status-upcoming"><span aria-hidden="true">&#9719; </span>Upcoming</span>
+        </div>
+        <p id="settings-feedback" role="status" aria-live="polite"></p>
+        <div class="settings-actions">
+            <button id="reset-settings" type="button">Reset to defaults</button>
+            <button id="close-settings" type="button">Done</button>
+        </div>
+    </dialog>
 </body>
 </html>
