@@ -18,18 +18,87 @@
 			<ol>
 				<li class="current">Medication type</li>
 				<li>Medication type</li>
-				<li>step label</li>
-				<li>step label</li>
+				<li>Number of Pills</li>
+				<li>Reminder Day</li>
 				<li>step label</li>
 			</ol>
 		</div>
+		<!--progress-container-->
+		<div class="steps-container">
+			<div class="step">
+    			<p><label for="medicine choice"> Search Medicine:</label></p>
+    			<p><input type="list" id="search-drug-choice" list="search-options" placeholder="Type to search..." /></p>
+    		<!--note: we will need to connect this the the midicine api on the backend <options> are!-->
+    			<datalist id="search-options"> 
+        		<option value="Atorvastatin (Lipitor)"></option>
+        		<option value="Amoxicillin (Amoxil)"></option>
+        		<option value="Metformin (Glucophage)"></option>
+        		<option value="Lisinopril (Prinivil)"></option>
+        		<option value="Albuterol (ProAir)"></option>
+    			</datalist>
+
+			</div>
+			<div class="step">
+				<p><label for="medicine form">What is the dose per pill?</label></p>
+				<p><input type="list" id="search-drug-dose" list="search-dose-options" placeholder="Type to search..." /></p>
+    		<!--note: we will need to connect this the the midicine api on the backend !-->
+    			<datalist id="search-dose-options">
+        			<option value="1mg"></option>
+        			<option value="5mg"></option>
+        			<option value="10mg"></option>
+        			<option value="20mg"></option>
+        			<option value="25mg"></option>
+    			</datalist>
+			</div>
+			<div class="step">
+				<h3>step 3</h3>
+				    <label for="how_many"> How many pills a day?:</label>
+    				<p><input type="list" id="number-of-pills-search" list="number-of-pills-search" placeholder="Type to search..." /></p>
+    				<datalist id="number-of-pills-search">
+        			<option value="1"></option>
+        			<option value="2"></option>
+        			<option value="3"></option>
+        			<option value="4"></option>
+        			<option value="5"></option>
+        			<option value ="other"></option>
+   					</datalist>
+			</div>
+			<div class="step">
+				<h3>step 4</h3>
+					<label for="how_many"> How many pills a day?:</label>
+    				<p><input type="list" id="Day-of-week" list="days" placeholder="Type to search..." /></p>
+    				<datalist id="days">
+        			<option value="Monday"></option>
+        			<option value="Tuesday"></option>
+        			<option value="Wednesday"></option>
+        			<option value="Thursday"></option>
+        			<option value="Friday"></option>
+        			<option value ="Saturday"></option>
+					<option value ="Sunday"></option>
+   					</datalist>
+			</div>
+			<div class="step">
+				<h3>step 5</h3>
+				<!--Turn down the scroll speed in CSS-->
+				<p><label>What time would you like to be reminded?</label></p>
+				<input
+   	 				type="time"
+    				id="pill_time"
+    				name="pill time"
+    				min="00:00"
+    				max="24:00:"
+				></input>
+
+			</div>
+		</div>
+		
+	<!-- .controls -->
 		<div class="controls">
 		<button type="button" class="prev-btn">Prev</button>
 		<button type="button" class="next-btn">Next</button>
 		<button type="submit" class="submit-btn">Submit</button>
 		</div>
 	</div>
-	<!--progress-container-->
 	<!-- .controls -->	
 </body>
 </html>

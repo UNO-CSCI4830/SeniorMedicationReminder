@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     /* html will automaticly adjust if you remove or add <li> */
     const progress =  document.querySelector(".progress");
+    const stepsContainer =  document.querySelector(".steps-container");
+    const steps = document.querySelectorAll(".step");
     const stepIndicators = document.querySelectorAll(".progress-container li");
     const prevButton = document.querySelector(".prev-btn");
     const nextButton = document.querySelector(".next-btn");
@@ -15,10 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let width = currentStep / (stepIndicators.length - 1);
         progress.style.transform = `scaleX(${width})`;
 
+        stepsContainer.style.height = steps[currentStep].offsetHeight + "px";
+
         stepIndicators.forEach((indicator, index) => {
             indicator.classList.toggle("current", currentStep === index);
             indicator.classList.toggle("done", currentStep > index);
         }); 
+
+        steps.forEach((step, index) => {
+            step.style.transform = `translateX(-${currentStep * 100}%)`;
+            step.classList.toggle("current", currentStep === index);
+        }); 
+
         updateButtons();
     };
 

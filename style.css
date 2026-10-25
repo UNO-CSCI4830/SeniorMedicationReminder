@@ -149,6 +149,25 @@ button[type="submit"]:hover, button[type="submit"]:active {
     box-shadow: 0 0 0 3px rgba(167,21, 84, 0.25);
 }
 
+.steps-container {
+    display: flex;
+    overflow: hidden;
+
+}
+
+.step {
+    flex: 1 0 100%;
+    padding: 24px 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    height: fit-content;
+    
+}
+
+.step.current {
+    opacity: 1;
+}
+
 .controls {
     display: flex;
     align-items: center;
