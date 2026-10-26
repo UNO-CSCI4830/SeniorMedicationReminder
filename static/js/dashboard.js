@@ -83,3 +83,52 @@ document.querySelectorAll('.remove-medication-form').forEach((form) => {
         }
     });
 });
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const accountButton = document.getElementById("account-button");
+    const accountMenu = document.getElementById("account-menu");
+
+    const profileOption = document.getElementById("profile-option");
+    const settingsOption = document.getElementById("account-settings-option");
+    const logoutOption = document.getElementById("logout-option");
+
+    function closeMenu() {
+        accountMenu.hidden = true;
+        accountButton.setAttribute("aria-expanded", "false");
+    }
+
+    accountButton.addEventListener("click", function () {
+        const isOpening = accountMenu.hidden;
+        accountMenu.hidden = !isOpening;
+        accountButton.setAttribute("aria-expanded", String(isOpening));
+    });
+
+    profileOption.addEventListener("click", function () {
+        window.location.href = "/profile";
+    });
+
+    settingsOption.addEventListener("click", function () {
+        window.location.href = "/account-settings";
+    });
+
+    logoutOption.addEventListener("click", function () {
+        closeMenu();
+        alert("Logout functionality coming soon");
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!event.target.closest(".account-container")) {
+            closeMenu();
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !accountMenu.hidden) {
+            closeMenu();
+            accountButton.focus();
+        }
+    });
+
+});

@@ -79,3 +79,13 @@ def update_status(medication_id):
         abort(404)
     db.commit()
     return redirect(url_for('main.home'), code=303)
+
+#routes to profile page
+@main.route("/profile")
+def profile():
+    return render_template("profile.html")
+
+#routes to account setting
+@main.route("/account-settings")
+def account_settings():
+    return render_template("accountSetting.html")

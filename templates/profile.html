@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Senior Medication Reminder</title>
+</head>
+
+<body>
+
+    <!-- Back to Dashboard -->
+    <header class="profile-header">
+        <a href="/" class="back-link">
+            &larr; Back to Dashboard
+        </a>
+    </header>
+
+    <main class="profile-container">
+
+        <h1 class="page-title">My Profile</h1>
+
+        <p class="page-description">
+            Manage your personal and emergency contact information.
+        </p>
+
+        <!-- PERSONAL INFORMATION -->
+        <section class="profile-card">
+
+            <h2>Personal Information</h2>
+            <p class="section-description">
+                Your basic account information.
+            </p>
+
+            <div class="form-grid">
+
+                <!-- Full Name -->
+                <div class="form-field">
+                    <label for="full-name">Full Name</label>
+                    <input id="full-name" type="text"
+                           placeholder="Enter your full name">
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="form-field">
+                    <label for="birth-date">Date of Birth</label>
+                    <input id="birth-date" type="date">
+                </div>
+
+                <!-- Email Address -->
+                <div class="form-field">
+                    <label for="email">Email Address</label>
+                    <input id="email" type="email"
+                           placeholder="example@email.com">
+                </div>
+
+                <!-- Preferred Language -->
+                <div class="form-field">
+                    <label for="language">Preferred Language</label>
+                    <select id="language">
+                        <option>English</option>
+                        <option>Spanish</option>
+                        <option>Karen</option>
+                    </select>
+                </div>
+
+                <!-- Time Zone -->
+                <div class="form-field">
+                    <label for="timezone">Time Zone</label>
+                    <select id="timezone">
+                        <option>Central Time</option>
+                        <option>Eastern Time</option>
+                        <option>Mountain Time</option>
+                        <option>Pacific Time</option>
+                    </select>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- EMERGENCY CONTACT -->
+        <section class="profile-card">
+
+            <h2>Emergency Contact</h2>
+            <p class="section-description">
+                Add someone who can be contacted in an emergency.
+            </p>
+
+            <div class="form-grid">
+
+                <!-- Contact Name -->
+                <div class="form-field">
+                    <label for="contact-name">Contact Name</label>
+                    <input id="contact-name" type="text"
+                           placeholder="Full name">
+                </div>
+
+                <!-- Contact Phone -->
+                <div class="form-field">
+                    <label for="contact-phone">Contact Phone</label>
+                    <input id="contact-phone" type="tel"
+                           placeholder="Phone number">
+                </div>
+
+                <!-- Relationship -->
+                <div class="form-field full-width">
+                    <label for="relationship">Relationship</label>
+                    <select id="relationship">
+                        <option value="">Choose relationship</option>
+                        <option>Spouse</option>
+                        <option>Child</option>
+                        <option>Parent</option>
+                        <option>Caregiver</option>
+                        <option>Friend</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SAVE CHANGES -->
+        <div class="section-footer">
+            <button type="button" class="save-button">
+                Save Changes
+            </button>
+        </div>
+
+    </main>
+
+</body>
+</html>
