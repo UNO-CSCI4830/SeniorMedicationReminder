@@ -180,3 +180,14 @@ button[type="submit"]:hover, button[type="submit"]:active {
 .controls button {
     flex: 1;
 }
+
+/* For user and registration */
+.user-panel input {
+    text-align: center;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.user-panel {
+    margin-bottom: 10px;
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css')}}">
+    <title>Register</title>
+</head>
+<body>
+    <div class="registration">
+        <h2 class ="register">Register</h2>
+        <form class="user-panel" action="{{ url_for('main.register')}}">
+        
+            <input class="textbox" type="text" name="username" placeholder="Enter Username" required>
+            <input class="textbox" type="password" name="password" placeholder="Enter Password" required>
+            <input class="textbox" type="email" name="email" placeholder="Enter Email" required>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p class="under-form">Already have an account? <a href="{{ url_for('main.login')}}">Login Here</a></p>
+    </div>
+</body>
+
+</html>
