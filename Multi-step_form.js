@@ -38,6 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.hidden = !nextButton.hidden;
     };
 
+    const isValidStep = (params) => {
+        const fields = steps[currentStep].querySelectorAll('input, textarea');
+        return [...fields].every(field => field.reportValidity())
+
+    }
+
     //event listeners
 
     prevButton.addEventListener("click", (e) => {
@@ -51,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     nextButton.addEventListener("click", (e) => {
         e.preventDefault(); //prevent form submission
+
+        if (!isValidStep()) return;
 
         if (currentStep < stepIndicators.length - 1) {
             currentStep++; 
