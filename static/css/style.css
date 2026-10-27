@@ -202,3 +202,11 @@ button[type="submit"]:hover, button[type="submit"]:active {
 .user-panel {
     margin-bottom: 10px;
 }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --main-color: #90ee90; --step-color: #ced7e0; }
+body { font-family: Arial, sans-serif; background: lightblue; color: #333; }
+button, input, select { font: inherit; }
+button { cursor: pointer; border: none; border-radius: 16px; padding: 8px 16px; background: var(--main-color); color: #000; }
+button:hover { background: #78d978; }
+button:disabled { cursor: default; opacity: 0.7; }
+[hidden] { display: none !important; }
