@@ -29,12 +29,12 @@ def drug_selection():
     return render_template("Drug_selection.html")
 
 #Registration
-@main.route("/register", methods=['GET', 'POST'])
-def register():
-    return render_template("register.html")
+@main.route("/signup")
+def signup():
+    return render_template("signup.html")
 
 #Login
-@main.route("/login", methods=['GET', 'POST'])
+@main.route("/login")
 def login():
     return render_template("login.html")
 

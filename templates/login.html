@@ -2,23 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width", initial-scale="1.0">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css')}}">
-    <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css')}}">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/validation.js')}}" defer></script>
 </head>
 <body>
-    <div class="login">
-        <h2 class ="login">Login</h2>
-        <form class="user-panel" action="{{ url_for('main.login')}}">
-        
-            <input class="textbox" type="text" name="username" placeholder="Enter Username" required>
-            <input class="textbox" type="password" name="password" placeholder="Enter Password" required>
-
-            <button type="submit">Login</button>
-        </form>
-
-        <p class="under-form">Don't have an account? <a href="{{ url_for('main.register')}}">Register Here</a></p>
+ <div class="wrapper">
+<h1>Login</h1>
+<p id="error-message"></p>
+<form id="form">
+    <div>
+        <input required type="email" name="email" id="email-input" placeholder="Email">
     </div>
+    <div>
+        <input required type="password" name="password" id="password-input" placeholder="Password">
+    </div>
+    <button type="submit">Login</button>
+</form>
+<p>New here? <a href="{{ url_for('main.signup')}}">Create an Account</a></p>
+ </div>
 </body>
-
 </html>
