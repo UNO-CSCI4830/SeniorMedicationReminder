@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, url_for
 from database import get_db
+from werkzeug.security import generate_password_hash, check_password_hash #Add security imports
 from scheduling import medication_states, next_due
 
 main = Blueprint('main', __name__)
@@ -29,9 +30,51 @@ def drug_selection():
     return render_template("Drug_selection.html")
 
 #Registration
-@main.route("/signup")
+@main.route("/signup", methods=["GET", "POST"])
 def signup():
+    if request.method == "POST":
+        first_name = request.form.get("firstname", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not first_name or not email or not password:
+            return render_template("signup.html", error="Please fill in all required fields.")
+
+        if password != confirm_password:
+            return render_template("signup.html", error="Passwords do not match.")
+
+        if len(password) < 8:
+            return render_template("signup.html", error="Password must be at least 8 characters.")
+
+        db = get_db()
+
+        existing_user = db.execute(
+            "SELECT id FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+        if existing_user:
+            return render_template("signup.html", error="An account with that email already exists.")
+
+        password_hash = generate_password_hash(password)
+
+        db.execute(
+            "INSERT INTO users (first_name, email, password_hash) VALUES (?, ?, ?)",
+            (first_name, email, password_hash)
+        )
+        db.commit()
+
+        return redirect(url_for("main.login"))
+
     return render_template("signup.html")
+
+# Collects the first name, email, and password
+# Checks that the passwords match
+# Requires a password of at least 8 characters
+# Prevents duplicate email accounts
+# Hashes the password before saving it
+# Sends the user to the login page after successful registration
+
 
 #Login
 @main.route("/login")
