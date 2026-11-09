@@ -1,19 +1,35 @@
 import re
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, url_for, session
 from database import get_db
 from werkzeug.security import generate_password_hash, check_password_hash #Add security imports
 from scheduling import medication_states, next_due
+from functools import wraps
 
 main = Blueprint('main', __name__)
 DAYS = {'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'}
 
+# Requires users to log in before accessing protected pages
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(**kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("main.login"))
+        return view(**kwargs)
+
+    return wrapped_view
+
+# Checks whether a user has a logged-in session
+# Redirects visitors who aren't logged in to the login page
+# Allows logged-in users to continue to the requested page
+# Lets us reuse this check across multiple routes
 
 @main.post('/medications/<int:medication_id>/delete')
+@login_required
 def delete_medication(medication_id):
     db = get_db()
-    cursor = db.execute('DELETE FROM medications WHERE id = ?', (medication_id,))
+    cursor = db.execute('DELETE FROM medications WHERE id = ? AND user_id = ?', (medication_id, session['user_id']))
     if cursor.rowcount == 0:
         abort(404)
     db.commit()
@@ -21,11 +37,13 @@ def delete_medication(medication_id):
 
 
 @main.route('/')
+@login_required # Tells Flask to check whether someone is logged in before displaying the dashboard
 def home():
-    return render_template('index.html', medications=medication_states())
+    return render_template('index.html', medications=medication_states(session['user_id']))
 
 #Drug Selection
 @main.route("/drug_selection")
+@login_required
 def drug_selection():
     return render_template("Drug_selection.html")
 
@@ -77,21 +95,55 @@ def signup():
 
 
 #Login
-@main.route("/login")
+@main.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        db = get_db()
+
+        user = db.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)
+        ).fetchone()
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            return render_template(
+                "login.html",
+                error="Invalid email or password."
+            )
+
+        session["user_id"] = user["id"]
+        session["user_name"] = user["first_name"]
+
+        return redirect(url_for("main.home"))
+
     return render_template("login.html")
 
+# Accepts login submissions through POST
+# Finds the account by email
+# Checks the submitted password against the stored hash
+# Saves the user's ID and first name in their session
+# Redirects successful logins to the dashboard
 
+@main.post("/logout")
+@login_required
+def logout():
+    session.clear()
+    return redirect(url_for("main.login"))
+# Logs the user out by clearing their session and sends them back to the login page
 
 
 @main.get('/api/medications/statuses')
+@login_required
 def medication_statuses():
-    response = jsonify([{'id': item['id'], 'status': item['status'], 'late_label': item['late_label']} for item in medication_states()])
+    response = jsonify([{'id': item['id'], 'status': item['status'], 'late_label': item['late_label']} for item in medication_states(session['user_id'])])
     response.headers['Cache-Control'] = 'no-store'
     return response
 
 
 @main.post('/api/medications')
+@login_required
 def add_medication():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -121,20 +173,21 @@ def add_medication():
     due = next_due(day, time, zone, datetime.now(timezone.utc))
     db = get_db()
     cursor = db.execute(
-        'INSERT INTO medications (name, dosage, pills_per_day, reminder_day, reminder_time, scheduled_at, reminder_timezone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        (fields['name'], fields['dosage'], int(pills), day, time, due, zone),
+        'INSERT INTO medications (name, dosage, pills_per_day, reminder_day, reminder_time, scheduled_at, reminder_timezone, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        (fields['name'], fields['dosage'], int(pills), day, time, due, zone, session['user_id']),
     )
     db.commit()
     return jsonify(id=cursor.lastrowid, status='upcoming'), 201
 
 
 @main.post('/medications/<int:medication_id>/status')
+@login_required
 def update_status(medication_id):
     status = request.form.get('status')
     if status != 'taken':
         abort(400, description='Use Mark as taken to confirm this medication.')
     db = get_db()
-    cursor = db.execute('UPDATE medications SET status = ? WHERE id = ?', (status, medication_id))
+    cursor = db.execute('UPDATE medications SET status = ? WHERE id = ? AND user_id = ?', (status, medication_id, session['user_id']))
     if cursor.rowcount == 0:
         abort(404)
     db.commit()
@@ -142,10 +195,12 @@ def update_status(medication_id):
 
 #routes to profile page
 @main.route("/profile")
+@login_required
 def profile():
     return render_template("profile.html")
 
 #routes to account setting
 @main.route("/account-settings")
+@login_required
 def account_settings():
     return render_template("accountSetting.html")

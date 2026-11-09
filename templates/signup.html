@@ -10,8 +10,10 @@
 <body>
  <div class="wrapper">
 <h1>Sign Up</h1>
-<p id="error-message"></p>
-<form id="form">
+<p id="error-message">
+    {{ error if error else '' }} <!--This allows Flask to display messages-->
+</p>
+<form id="form" method="POST" action="{{ url_for('main.signup') }}"> <!--Tells the browser to send the registration information to your Flask route using POST-->
     <div>
         <input required type="text" name="firstname" id="firstname-input" placeholder="First Name">
     </div>

@@ -114,8 +114,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     logoutOption.addEventListener("click", function () {
-        closeMenu();
-        alert("Logout functionality coming soon");
+        const logoutForm = document.createElement("form");
+        logoutForm.method = "POST";
+        logoutForm.action = "/logout";
+
+        document.body.appendChild(logoutForm);
+        logoutForm.submit();
     });
 
     document.addEventListener("click", function (event) {

@@ -9,6 +9,7 @@ def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(current_app.config['DATABASE'])
         g.db.row_factory = sqlite3.Row
+        g.db.execute('PRAGMA foreign_keys = ON') # Enables foreign key enforcement for each database connection
     return g.db
 
 
@@ -50,6 +51,8 @@ def init_db(app):
             get_db().execute('ALTER TABLE medications ADD COLUMN scheduled_at INTEGER')
         if 'reminder_timezone' not in columns:
             get_db().execute('ALTER TABLE medications ADD COLUMN reminder_timezone TEXT')
+        if 'user_id' not in columns:
+            get_db().execute('ALTER TABLE medications ADD COLUMN user_id INTEGER REFERENCES users(id)')
         from scheduling import next_due
         for row in get_db().execute('SELECT * FROM medications WHERE scheduled_at IS NULL').fetchall():
             zone = app.config['REMINDER_TIMEZONE']

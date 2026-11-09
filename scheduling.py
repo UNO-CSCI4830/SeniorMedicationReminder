@@ -34,13 +34,13 @@ def overdue_text(seconds):
     return f'Due {amount} {unit}{"s" if amount != 1 else ""} ago'
 
 
-def medication_states():
+def medication_states(user_id):
     now = time.time()
     db = get_db()
-    db.execute("UPDATE medications SET status = 'missed' WHERE status = 'upcoming' AND scheduled_at <= ?", (now,))
+    db.execute("UPDATE medications SET status = 'missed' WHERE user_id = ? AND status = 'upcoming' AND scheduled_at <= ?", (user_id, now))
     db.commit()
     medications = []
-    for row in db.execute('SELECT * FROM medications ORDER BY id DESC').fetchall():
+    for row in db.execute('SELECT * FROM medications WHERE user_id = ? ORDER BY id DESC', (user_id,)).fetchall():
         medication = dict(row)
         local = datetime.fromtimestamp(row['scheduled_at'], ZoneInfo(row['reminder_timezone']))
         medication['scheduled_time'] = local.strftime('%I:%M %p').lstrip('0')
