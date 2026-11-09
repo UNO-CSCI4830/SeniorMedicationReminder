@@ -23,6 +23,15 @@ def init_db(app):
     app.teardown_appcontext(close_db)
     with app.app_context():
         get_db().execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                first_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        get_db().execute('''
             CREATE TABLE IF NOT EXISTS medications (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
