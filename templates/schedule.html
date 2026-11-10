@@ -1,0 +1,44 @@
+{% extends 'index.html' %}
+{% block title %}Schedule | Senior Medication Reminder{% endblock %}
+{% block heading %}Medication Schedule{% endblock %}
+{% block form_script %}{% endblock %}
+{% block medication_dialog %}{% endblock %}
+
+{% block content %}
+<section class="calendar" aria-labelledby="calendar-month">
+    <nav class="calendar-navigation" aria-label="Calendar month">
+        <a href="{{ url_for('main.schedule', month=previous_month) }}">Previous month</a>
+        <h2 id="calendar-month">{{ month.strftime('%B %Y') }}</h2>
+        <a href="{{ url_for('main.schedule', month=next_month) }}">Next month</a>
+    </nav>
+    <div class="calendar-scroll" tabindex="0" role="region" aria-label="Monthly medication calendar">
+        <table class="month-grid" aria-labelledby="calendar-month">
+            <thead><tr>
+                {% for weekday in ('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat') %}
+                <th scope="col">{{ weekday }}</th>
+                {% endfor %}
+            </tr></thead>
+            <tbody>
+                {% for week in weeks %}
+                <tr>
+                    {% for day in week %}
+                    <td {% if day.month != month.month %}class="outside-month"{% endif %}>
+                        {% if day.month == month.month %}
+                        <time datetime="{{ day.isoformat() }}" {% if day == today %}aria-current="date"{% endif %}>{{ day.day }}</time>
+                        {% if day in reminders %}
+                        <ul class="calendar-reminders">
+                            {% for medication in reminders[day] %}
+                            <li><strong>{{ medication.name }}</strong><br>{{ medication.scheduled_time }} &middot; {{ medication.pills_per_day }} {{ 'pill' if medication.pills_per_day == 1 else 'pills' }} ({{ medication.dosage }} each)</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

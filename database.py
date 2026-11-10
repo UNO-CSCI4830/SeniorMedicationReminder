@@ -41,6 +41,8 @@ def init_db(app):
             get_db().execute('ALTER TABLE medications ADD COLUMN scheduled_at INTEGER')
         if 'reminder_timezone' not in columns:
             get_db().execute('ALTER TABLE medications ADD COLUMN reminder_timezone TEXT')
+        if 'reminder_frequency' not in columns:
+            get_db().execute("ALTER TABLE medications ADD COLUMN reminder_frequency TEXT NOT NULL DEFAULT 'once'")
         from scheduling import next_due
         for row in get_db().execute('SELECT * FROM medications WHERE scheduled_at IS NULL').fetchall():
             zone = app.config['REMINDER_TIMEZONE']

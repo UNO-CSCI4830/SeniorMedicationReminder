@@ -1,4 +1,4 @@
-"""One scheduled occurrence per medication, with a persisted UTC due time."""
+"""Track the current scheduled occurrence for each medication."""
 from datetime import datetime, timedelta, timezone
 import time
 from zoneinfo import ZoneInfo
@@ -38,6 +38,21 @@ def medication_states():
     now = time.time()
     db = get_db()
     db.execute("UPDATE medications SET status = 'missed' WHERE status = 'upcoming' AND scheduled_at <= ?", (now,))
+    for row in db.execute("SELECT * FROM medications WHERE reminder_frequency IN ('daily', 'weekly')"):
+        timezone_name = row['reminder_timezone']
+        zone = ZoneInfo(timezone_name)
+        local_now = datetime.fromtimestamp(now, zone)
+        midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        weekly = row['reminder_frequency'] == 'weekly'
+        interval = timedelta(days=7 if weekly else 1)
+        day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
+        due = next_due(day, row['reminder_time'], timezone_name, midnight)
+        if due > now:
+            midnight -= interval
+            day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
+            due = next_due(day, row['reminder_time'], timezone_name, midnight)
+        if due > row['scheduled_at']:
+            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ?", (due, row['id']))
     db.commit()
     medications = []
     for row in db.execute('SELECT * FROM medications ORDER BY id DESC').fetchall():

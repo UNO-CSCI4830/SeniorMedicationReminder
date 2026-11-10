@@ -177,7 +177,7 @@ body.dashboard-page {
 .large-text .medication-details, .large-text .medication-actions { flex-basis: auto; }
 
 #medication-form { margin-top: 24px; }
-.form-progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; list-style: none; counter-reset: form-step; }
+.form-progress { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; list-style: none; counter-reset: form-step; }
 .form-progress li { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 0.875rem; color: #595959; overflow-wrap: anywhere; }
 .form-progress li::before { counter-increment: form-step; content: counter(form-step); display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--step-color); color: #333; }
 .form-progress li[aria-current="step"] { color: #333; font-weight: 700; }
@@ -191,4 +191,54 @@ body.dashboard-page {
 @media (max-width: 420px) {
     #medication-adder { padding: 16px; }
     .form-progress { gap: 4px; }
+}
+
+.calendar {
+    max-width: 1120px;
+    background: #fff;
+    border: 1px solid #d9e5e7;
+    border-radius: 14px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 3%);
+    padding: clamp(12px, 2vw, 24px);
+}
+.calendar-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.calendar-navigation a {
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: var(--main-color);
+    color: #000;
+    text-decoration: none;
+}
+.calendar-navigation a:hover { background: #78d978; }
+.calendar-scroll { overflow-x: auto; border: 1px solid #d9e5e7; border-radius: 8px; }
+.month-grid { width: 100%; min-width: 42rem; table-layout: fixed; border-collapse: collapse; }
+.month-grid th, .month-grid td { padding: 8px; border: 1px solid #d9e5e7; }
+.month-grid th { background: #edf7ef; }
+.month-grid td { height: 90px; vertical-align: top; }
+.month-grid .outside-month { background: #f4f7f8; }
+.month-grid [aria-current="date"] {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    border-radius: 50%;
+    background: var(--main-color);
+    color: #000;
+    font-weight: 700;
+}
+.calendar-reminders { padding: 0; margin: 8px 0 0; list-style: none; }
+.calendar-reminders li {
+    padding: 6px 8px;
+    margin-block: 6px;
+    border-radius: 8px;
+    background: #edf7ef;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
 }
