@@ -10,6 +10,13 @@
 <body>
  <div class="wrapper">
 <h1>Login</h1>
+<!--Display message "Your account has been deleted" when user deletes account and gets redirect back to login page-->
+{% if request.args.get('msg') %}
+    <div id="account-deletion-msg">
+        {{ request.args.get('msg') }}
+    </div>
+{% endif %}
+
 <p id="error-message">
     {{ error if error else '' }} <!--This will display "Invalid email or password when someone enters incorrect credentials"-->
 </p>

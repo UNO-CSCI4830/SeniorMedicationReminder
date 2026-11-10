@@ -120,3 +120,11 @@ form div.incorrect input{
 #error-message{
     color:#ff0000
 }
+
+#account-deletion-msg {
+    color: #ff0000;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}

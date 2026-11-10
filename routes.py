@@ -203,4 +203,25 @@ def profile():
 @main.route("/account-settings")
 @login_required
 def account_settings():
-    return render_template("accountSetting.html")
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)
+        ).fetchone()
+
+    msg_type = request.args.get("msg")
+
+    return render_template("accountSetting.html", user=user, msg=msg_type)
+
+#routes to delete account
+@main.route("/delete-account", methods=["POST"])
+@login_required
+def delete_account():
+    db = get_db()
+
+    db.execute("DELETE FROM users WHERE id =?", (session["user_id"],))
+    db.commit()
+
+    session.clear()
+
+    return redirect(url_for("main.login", msg="Your account has been deleted."))
+
+
