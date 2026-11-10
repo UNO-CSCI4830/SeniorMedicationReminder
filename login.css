@@ -4,6 +4,8 @@
   --secondary-color: #fcfcf7;
   --text-color: #333;
   --input-color: #f5f5f5;
+  --error-color: #d92d2d;
+  --success-color: #2e8b57;
 }
 * {
   margin: 0;
@@ -18,6 +20,7 @@ html{
 body{
     min-height: 100vh;
     background-image: url(background.jpg.jpg);
+    background-color: var(--primary-color);
     background-size: cover;
     background-position: right;
     overflow: hidden;
@@ -31,13 +34,25 @@ body{
     border-radius: 0 20px 20px 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    overflow-y: auto; 
+}
+.wrapper > :first-child{
+    margin-top: auto;
+}
+.wrapper > :last-child{
+    margin-bottom: auto;
 }
 h1{
     font-size: 3rem;
     font-weight: 900;
     text-transform: uppercase;
+}
+.subtitle{
+    margin-top: 10px;
+    max-width: 90%;
+    line-height: 1.4;
 }
 form{
     width: 100%;
@@ -48,7 +63,8 @@ form{
     align-items: center;
     gap: 10px;
 }
-form > div{
+form > div,
+.guardian-fields > div{
     width: 100%;
     display: flex;
     justify-content: center;
@@ -73,11 +89,10 @@ form input{
     height: 50px;
     padding: 1em;
     font: inherit;
-    border-radius: 10px 10px 10px 10px;
-    border: none;
-    background-color: var(--secondary-color);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-color: var(--input-color);
     transition: 150ms ease-in-out;
-
 }
 form input:hover{
     border: 2px solid var(--primary-color);
@@ -91,6 +106,7 @@ form button{
     border: none;
     border-radius: 600px;
     padding: 0.85em 4em;
+    font: inherit;
     font-weight: 800;
     text-transform: uppercase;
     cursor: pointer;
@@ -104,19 +120,96 @@ form button:focus{
     outline: none;
     background-color: var(--primary-color);
 }
-a:hover{
-    text-decoration: none;
-    color: var(--primary-color);
+a{
+    color: var(--text-color);
+    font-weight: 500;
 }
 a:hover{
     text-decoration: underline;
+    color: var(--primary-color);
 }
+.forgot-link{
+    margin-top: -4px;
+    font-size: 0.9rem;
+}
+
+form > div.name-row{
+    gap: 10px;
+}
+
+form > div.checkbox-row{
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px;
+}
+form .checkbox-row label{
+    width: auto;
+    height: auto;
+    background: none;
+    color: var(--text-color);
+    border-radius: 0;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+}
+form .checkbox-row input{
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.guardian-fields{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    border-radius: 14px;
+    border: 2px dashed var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: pop-in 200ms ease-out;
+}
+.guardian-fields h2{
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.hidden{
+    display: none !important;
+}
+@keyframes pop-in{
+    from{ opacity: 0; transform: translateY(-8px); }
+    to{ opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce){
+    .guardian-fields{ animation: none; }
+}
+
 form div.incorrect label{
-    background-color: #ff0000;
+    background-color: var(--error-color);
 }
 form div.incorrect input{
-    border-color: #ff0000;
+    border-color: var(--error-color);
 }
 #error-message{
-    color:#ff0000
+    color: var(--error-color);
+}
+#success-message{
+    color: var(--success-color);
+    font-weight: 500;
+    max-width: 90%;
+}
+
+@media (max-width: 800px){
+    .wrapper{
+        width: 100%;
+        border-radius: 0;
+    }
+    h1{
+        font-size: 2.2rem;
+    }
 }
