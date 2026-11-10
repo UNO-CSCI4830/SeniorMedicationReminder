@@ -13,7 +13,9 @@ const authentication_ = nodemailer.createTransport({
     secure: true,
     auth: {
         user: 'iamerror98@gmail.com',
-        pass: 'zufn gdxh ingl gbws',
+
+        //put the email and password for the email here. Erased the previous one because I do not want to be hacked.
+        pass: 'xxxxxxxxxx',
   }
 });
 
