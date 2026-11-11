@@ -12,12 +12,14 @@ def next_due(day, clock, timezone_name, created_at):
     zone = ZoneInfo(timezone_name)
     local = created_at.astimezone(zone)
     hour, minute = map(int, clock.split(':'))
-    date = local.date() + timedelta(days=(DAYS.index(day) - local.weekday()) % 7)
+    date = local.date()
+    if day is not None:
+        date += timedelta(days=(DAYS.index(day) - local.weekday()) % 7)
     due = datetime(date.year, date.month, date.day, hour, minute, tzinfo=zone)
     # Resolve nonexistent spring-forward times by normalizing through UTC.
     due = due.astimezone(timezone.utc).astimezone(zone)
     if due.timestamp() < created_at.timestamp():
-        date += timedelta(days=7)
+        date += timedelta(days=1 if day is None else 7)
         due = datetime(date.year, date.month, date.day, hour, minute, tzinfo=zone)
     return int(due.timestamp())
 

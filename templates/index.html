@@ -16,7 +16,6 @@
             <h2>Senior Medication Reminder</h2>
             <nav aria-label="Main navigation">
                 <a class="nav-link{% if request.endpoint == 'main.home' %} active{% endif %}" href="{{ url_for('main.home') }}"{% if request.endpoint == 'main.home' %} aria-current="page"{% endif %}>Dashboard</a>
-                <button type="button" class="nav-link" data-coming-soon="Medications">Medications <small>Coming soon</small></button>
                 <a class="nav-link{% if request.endpoint == 'main.schedule' %} active{% endif %}" href="{{ url_for('main.schedule') }}"{% if request.endpoint == 'main.schedule' %} aria-current="page"{% endif %}>Schedule</a>
             </nav>
             <button type="button" class="account" data-coming-soon="My Account">
@@ -44,8 +43,8 @@
                     <li class="medication-card" data-medication-id="{{ medication.id }}" data-scheduled-at="{{ medication.scheduled_at }}">
                         <div class="medication-details">
                             <h3>{{ medication.name }}</h3>
-                            <p>{{ medication.dosage }} per pill &middot; {{ medication.pills_per_day }} pill(s) per reminder</p>
-                            <p class="reminder-day">Reminder: {{ 'Daily' if medication.reminder_frequency == 'daily' else medication.reminder_day }}</p>
+                            <p>{{ medication.dose_amount }} per reminder</p>
+                            <p class="reminder-day">Reminder: {{ 'Daily' if medication.reminder_frequency == 'daily' else ('Weekly on ' if medication.reminder_frequency == 'weekly' else 'Once on ') ~ medication.reminder_day }}</p>
                         </div>
                         <div class="medication-schedule">
                             <span class="schedule-label">Scheduled time</span>
@@ -59,6 +58,12 @@
                                 <input type="hidden" name="status" value="taken">
                                 <button type="submit" aria-label="Mark {{ medication.name }} as taken" {% if medication.status == 'taken' %}disabled{% endif %}>{{ 'Taken' if medication.status == 'taken' else 'Mark as taken' }}</button>
                             </form>
+                            <button class="edit-medication-button" type="button"
+                                    aria-label="Edit {{ medication.name }}" aria-haspopup="dialog" aria-controls="medication-adder"
+                                    data-edit-url="{{ url_for('main.add_medication', medication_id=medication.id) }}"
+                                    data-name="{{ medication.name }}" data-dose-amount="{{ medication.dose_amount }}"
+                                    data-frequency="{{ medication.reminder_frequency }}"
+                                    data-day="{{ medication.reminder_day }}" data-time="{{ medication.reminder_time }}">Edit</button>
                             <form class="remove-medication-form" action="{{ url_for('main.delete_medication', medication_id=medication.id) }}" method="post" data-medication-name="{{ medication.name }}">
                                 <button class="remove-medication-button" type="submit" aria-label="Remove {{ medication.name }}">Remove</button>
                             </form>
@@ -80,62 +85,41 @@
         </div>
         <form id="medication-form" action="{{ url_for('main.add_medication') }}" method="post" novalidate>
             <ol class="form-progress" aria-label="Medication form steps">
-                <li aria-current="step">Medication</li>
-                <li>Dosage</li>
-                <li>Frequency</li>
-                <li>Pill count</li>
-                <li>Day</li>
-                <li>Time</li>
+                <li aria-current="step">Medication details</li>
+                <li>Reminder schedule</li>
             </ol>
-            <p id="medication-step-description" role="status">Step 1 of 6: Medication</p>
             <div class="medication-step">
                 <label for="medication-name">Medication name</label>
-                <input id="medication-name" name="name" type="text" list="medication-options" maxlength="200" required placeholder="Type to search...">
-                <datalist id="medication-options">
-                    <option value="Atorvastatin (Lipitor)"></option>
-                    <option value="Amoxicillin (Amoxil)"></option>
-                    <option value="Metformin (Glucophage)"></option>
-                    <option value="Lisinopril (Prinivil)"></option>
-                    <option value="Albuterol (ProAir)"></option>
-                </datalist>
-            </div>
-            <div class="medication-step" hidden>
-                <label for="medication-dosage">What is the dose per pill?</label>
-                <input id="medication-dosage" name="dosage" type="text" list="dosage-options" maxlength="100" required placeholder="For example, 5 mg">
-                <datalist id="dosage-options">
-                    <option value="1 mg"></option><option value="5 mg"></option>
-                    <option value="10 mg"></option><option value="20 mg"></option><option value="25 mg"></option>
-                </datalist>
+                <input id="medication-name" name="name" type="text" autocomplete="off" maxlength="200" required placeholder="Enter medication name">
+                <label for="medication-dose">Amount per reminder</label>
+                <input id="medication-dose" name="dose_amount" type="text" maxlength="200" required aria-describedby="medication-dose-help">
+                <p id="medication-dose-help">For example, 2 tablets, 5 mL, 2 puffs, or 1 patch.</p>
             </div>
             <div class="medication-step" hidden>
                 <label for="medication-frequency">How often would you like a reminder?</label>
                 <select id="medication-frequency" name="reminder_frequency" required>
                     <option value="">Choose a frequency</option>
+                    <option value="once">One time</option>
                     <option value="daily">Daily (every day)</option>
                     <option value="weekly">Weekly (once a week)</option>
                 </select>
-            </div>
-            <div class="medication-step" hidden>
-                <label for="medication-pills">How many pills per reminder?</label>
-                <input id="medication-pills" name="pills_per_day" type="number" min="1" max="999" step="1" required>
-            </div>
-            <div class="medication-step" hidden>
-                <label for="medication-day">What day should reminders start?</label>
-                <select id="medication-day" name="reminder_day" required>
-                    <option value="">Choose a day</option>
-                    <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-                    <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
-                </select>
-            </div>
-            <div class="medication-step" hidden>
+                <div id="medication-day-field" hidden>
+                    <label for="medication-day">Which day?</label>
+                    <select id="medication-day" name="reminder_day" required disabled>
+                        <option value="">Choose a day</option>
+                        <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                        <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+                    </select>
+                </div>
                 <label for="medication-time">What time would you like to be reminded?</label>
                 <input id="medication-time" name="reminder_time" type="time" required>
+                <p id="medication-summary" aria-live="polite"></p>
             </div>
             <p id="medication-save-feedback" role="status" aria-live="polite"></p>
             <div class="medication-form-controls">
-                <button id="medication-previous" type="button" hidden>Previous</button>
+                <button id="medication-previous" type="button" hidden>Back</button>
                 <button id="medication-next" type="button">Next</button>
-                <button id="medication-submit" type="submit" hidden>Add Medication</button>
+                <button id="medication-submit" type="submit" hidden>Save medication</button>
             </div>
         </form>
     </dialog>

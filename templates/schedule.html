@@ -5,11 +5,42 @@
 {% block medication_dialog %}{% endblock %}
 
 {% block content %}
+<section class="day-agenda" aria-labelledby="agenda-date">
+    <h2 id="agenda-date">{{ selected_day.strftime('%A, %B') }} {{ selected_day.day }}, {{ selected_day.year }}</h2>
+    <nav class="schedule-navigation" aria-label="Agenda date">
+        {% if previous_day %}
+        <a href="{{ url_for('main.schedule', date=previous_day.isoformat()) }}">Previous day</a>
+        {% endif %}
+        <a href="{{ url_for('main.schedule') }}"{% if selected_day == today %} aria-current="date"{% endif %}>Today</a>
+        {% if next_day %}
+        <a href="{{ url_for('main.schedule', date=next_day.isoformat()) }}">Next day</a>
+        {% endif %}
+    </nav>
+    {% if agenda %}
+    <ul class="agenda-reminders">
+        {% for occurrence, medication in agenda %}
+        <li>
+            <time datetime="{{ occurrence.isoformat() }}">{{ occurrence.strftime('%I:%M %p').lstrip('0') }} {{ occurrence.strftime('%Z') }}</time>
+            <div>
+                <strong>{{ medication.name }}</strong>
+                <p>{{ medication.dose_amount }}</p>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No reminders scheduled.</p>
+    {% endif %}
+</section>
 <section class="calendar" aria-labelledby="calendar-month">
-    <nav class="calendar-navigation" aria-label="Calendar month">
-        <a href="{{ url_for('main.schedule', month=previous_month) }}">Previous month</a>
-        <h2 id="calendar-month">{{ month.strftime('%B %Y') }}</h2>
-        <a href="{{ url_for('main.schedule', month=next_month) }}">Next month</a>
+    <h2 id="calendar-month">{{ month.strftime('%B %Y') }}</h2>
+    <nav class="schedule-navigation" aria-label="Calendar month">
+        {% if previous_month %}
+        <a href="{{ url_for('main.schedule', month=previous_month.isoformat()[:7]) }}">Previous month</a>
+        {% endif %}
+        {% if next_month %}
+        <a href="{{ url_for('main.schedule', month=next_month.isoformat()[:7]) }}">Next month</a>
+        {% endif %}
     </nav>
     <div class="calendar-scroll" tabindex="0" role="region" aria-label="Monthly medication calendar">
         <table class="month-grid" aria-labelledby="calendar-month">
@@ -24,14 +55,13 @@
                     {% for day in week %}
                     <td {% if day.month != month.month %}class="outside-month"{% endif %}>
                         {% if day.month == month.month %}
-                        <time datetime="{{ day.isoformat() }}" {% if day == today %}aria-current="date"{% endif %}>{{ day.day }}</time>
-                        {% if day in reminders %}
-                        <ul class="calendar-reminders">
-                            {% for medication in reminders[day] %}
-                            <li><strong>{{ medication.name }}</strong><br>{{ medication.scheduled_time }} &middot; {{ medication.pills_per_day }} {{ 'pill' if medication.pills_per_day == 1 else 'pills' }} ({{ medication.dosage }} each)</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
+                        {% set count = reminders.get(day, [])|length %}
+                        <a class="calendar-day" href="{{ url_for('main.schedule', date=day.isoformat()) }}"
+                           {% if day == selected_day %}aria-current="true"{% endif %}
+                           aria-label="{{ day.strftime('%A, %B') }} {{ day.day }}{% if day == today %}, today{% endif %}, {{ count }} {{ 'reminder' if count == 1 else 'reminders' }}">
+                            <time datetime="{{ day.isoformat() }}"{% if day == today %} class="calendar-today"{% endif %}>{{ day.day }}</time>
+                            {% if count %}<span>{{ count }} {{ 'reminder' if count == 1 else 'reminders' }}</span>{% endif %}
+                        </a>
                         {% endif %}
                     </td>
                     {% endfor %}
