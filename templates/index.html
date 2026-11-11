@@ -18,16 +18,33 @@
                 <a class="nav-link{% if request.endpoint == 'main.home' %} active{% endif %}" href="{{ url_for('main.home') }}"{% if request.endpoint == 'main.home' %} aria-current="page"{% endif %}>Dashboard</a>
                 <a class="nav-link{% if request.endpoint == 'main.schedule' %} active{% endif %}" href="{{ url_for('main.schedule') }}"{% if request.endpoint == 'main.schedule' %} aria-current="page"{% endif %}>Schedule</a>
             </nav>
-            <button type="button" class="account" data-coming-soon="My Account">
-                <span class="avatar" aria-hidden="true">SM</span>
-                <span><strong>My Account</strong><small>Demo profile</small></span>
-            </button>
+
+            <!--The drop up menu when clicking on the account-->
+            <div class="account-container">
+                <div class="account-menu" id="account-menu" hidden>
+                    <button type="button" id="profile-option">Profile</button>
+                    <button type="button" id="account-settings-option">Settings</button>
+                    <button type="button" id="logout-option">Log Out</button>
+                </div>
+
+                <button type="button" class="account" id="account-button"
+                        aria-expanded="false" aria-controls="account-menu">
+                    <span class="avatar" aria-hidden="true">SM</span>
+                    <span>
+                        <strong>My Account</strong>
+                        <small>Demo profile</small>
+                    </span>
+                </button>
+            </div>
+
+
+
         </aside>
         <main class="dashboard-main">
             <header class="dashboard-header">
                 <h1>{% block heading %}My Medication Reminder{% endblock %}</h1>
                 <button class="settings-button" id="open-settings" type="button" aria-haspopup="dialog" aria-controls="accessibility-settings">
-                    <span aria-hidden="true">&#9881;</span> Settings
+                    <span aria-hidden="true">&#9881;</span> Text Sizes
                 </button>
             </header>
             {% block content %}

@@ -6,6 +6,7 @@ from database import init_db
 
 def create_app(config=None):
     app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'replace-this-with-a-random-secret-key'
     app.config['DATABASE'] = str(Path(app.instance_path) / 'medications.sqlite3')
     app.config['REMINDER_TIMEZONE'] = 'America/Chicago'
     if config:

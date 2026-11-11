@@ -1,6 +1,5 @@
 """SQLite connections and schema for the medication dashboard."""
 import sqlite3
-from datetime import datetime, timezone
 from pathlib import Path
 from flask import current_app, g
 
@@ -16,7 +15,8 @@ MEDICATION_COLUMNS = '''
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     scheduled_at INTEGER,
     reminder_timezone TEXT,
-    reminder_frequency TEXT NOT NULL DEFAULT 'once'
+    reminder_frequency TEXT NOT NULL DEFAULT 'once',
+    user_id INTEGER REFERENCES users(id)
 '''
 
 
@@ -24,6 +24,7 @@ def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(current_app.config['DATABASE'])
         g.db.row_factory = sqlite3.Row
+        g.db.execute('PRAGMA foreign_keys = ON') # Enables foreign key enforcement for each database connection
     return g.db
 
 
@@ -39,36 +40,14 @@ def init_db(app):
     with app.app_context():
         db = get_db()
         db.execute('BEGIN IMMEDIATE')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                first_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         db.execute(f'CREATE TABLE IF NOT EXISTS medications ({MEDICATION_COLUMNS})')
-        # Add scheduling fields without deleting existing medications or statuses.
-        columns = {row['name'] for row in db.execute('PRAGMA table_info(medications)')}
-        if 'scheduled_at' not in columns:
-            db.execute('ALTER TABLE medications ADD COLUMN scheduled_at INTEGER')
-        if 'reminder_timezone' not in columns:
-            db.execute('ALTER TABLE medications ADD COLUMN reminder_timezone TEXT')
-        if 'reminder_frequency' not in columns:
-            db.execute("ALTER TABLE medications ADD COLUMN reminder_frequency TEXT NOT NULL DEFAULT 'once'")
-        if 'pills_per_day' in columns:
-            db.execute(f'CREATE TABLE medications_new ({MEDICATION_COLUMNS})')
-            db.execute('''
-                INSERT INTO medications_new (
-                    id, name, dose_amount, reminder_day, reminder_time, status,
-                    created_at, scheduled_at, reminder_timezone, reminder_frequency
-                )
-                SELECT id, name,
-                    pills_per_day || CASE WHEN pills_per_day = 1
-                        THEN ' pill (' || dosage || ')'
-                        ELSE ' pills (' || dosage || ' each)' END,
-                    reminder_day, reminder_time, status, created_at, scheduled_at,
-                    reminder_timezone, reminder_frequency
-                FROM medications
-            ''')
-            db.execute('DROP TABLE medications')
-            db.execute('ALTER TABLE medications_new RENAME TO medications')
-        from scheduling import next_due
-        for row in db.execute('SELECT * FROM medications WHERE scheduled_at IS NULL').fetchall():
-            zone = app.config['REMINDER_TIMEZONE']
-            created = datetime.fromisoformat(row['created_at']).replace(tzinfo=timezone.utc)
-            due = next_due(row['reminder_day'], row['reminder_time'], zone, created)
-            db.execute('UPDATE medications SET scheduled_at = ?, reminder_timezone = ? WHERE id = ?', (due, zone, row['id']))
         db.commit()

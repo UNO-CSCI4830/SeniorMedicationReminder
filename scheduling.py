@@ -36,11 +36,11 @@ def overdue_text(seconds):
     return f'Due {amount} {unit}{"s" if amount != 1 else ""} ago'
 
 
-def medication_states():
+def medication_states(user_id):
     now = time.time()
     db = get_db()
-    db.execute("UPDATE medications SET status = 'missed' WHERE status = 'upcoming' AND scheduled_at <= ?", (now,))
-    for row in db.execute("SELECT * FROM medications WHERE reminder_frequency IN ('daily', 'weekly')"):
+    db.execute("UPDATE medications SET status = 'missed' WHERE user_id = ? AND status = 'upcoming' AND scheduled_at <= ?", (user_id, now))
+    for row in db.execute("SELECT * FROM medications WHERE user_id = ? AND reminder_frequency IN ('daily', 'weekly')", (user_id,)):
         timezone_name = row['reminder_timezone']
         zone = ZoneInfo(timezone_name)
         local_now = datetime.fromtimestamp(now, zone)
@@ -54,10 +54,10 @@ def medication_states():
             day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
             due = next_due(day, row['reminder_time'], timezone_name, midnight)
         if due > row['scheduled_at']:
-            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ?", (due, row['id']))
+            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ? AND user_id = ?", (due, row['id'], user_id))
     db.commit()
     medications = []
-    for row in db.execute('SELECT * FROM medications ORDER BY id DESC').fetchall():
+    for row in db.execute('SELECT * FROM medications WHERE user_id = ? ORDER BY id DESC', (user_id,)).fetchall():
         medication = dict(row)
         local = datetime.fromtimestamp(row['scheduled_at'], ZoneInfo(row['reminder_timezone']))
         medication['scheduled_time'] = local.strftime('%I:%M %p').lstrip('0')

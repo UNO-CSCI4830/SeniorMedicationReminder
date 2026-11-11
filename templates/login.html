@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css')}}">
+    <script type="text/javascript" src="{{ url_for('static', filename='js/validation.js')}}" defer></script>
+</head>
+<body>
+ <div class="wrapper">
+<h1>Login</h1>
+<!--Display message "Your account has been deleted" when user deletes account and gets redirect back to login page-->
+{% if request.args.get('msg') %}
+    <div id="account-deletion-msg">
+        {{ request.args.get('msg') }}
+    </div>
+{% endif %}
+
+<p id="error-message">
+    {{ error if error else '' }} <!--This will display "Invalid email or password when someone enters incorrect credentials"-->
+</p>
+<form id="form" method="POST" action="{{ url_for('main.login') }}"> <!--Tells Flask to receive the email and password when someone submits the login form-->
+    <div>
+        <input required type="email" name="email" id="email-input" placeholder="Email">
+    </div>
+    <div>
+        <input required type="password" name="password" id="password-input" placeholder="Password">
+    </div>
+    <button type="submit">Login</button>
+</form>
+<p>New here? <a href="{{ url_for('main.signup')}}">Create an Account</a></p>
+ </div>
+</body>
+</html>
