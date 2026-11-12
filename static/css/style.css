@@ -19,7 +19,6 @@
 body{
     height: 100vh;
     display: grid;
-    place-items: center;
     background-color: lightblue;
     color: #333;
 }
@@ -63,14 +62,6 @@ button:disabled {
 
 button:focus {
     outline-color: #333;
-}
-
-button[type="submit"] {
-    background-color: #dd7272;
-}
-
-button[type="submit"]:hover, button[type="submit"]:active {
-    background-color: #ac9f9f;
 }
 
 /* form styles*/

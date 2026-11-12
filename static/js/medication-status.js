@@ -7,12 +7,13 @@ function displayLocalMedicationTimes() {
         weekday: 'short', month: 'short', day: 'numeric',
         hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short',
     });
-    const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
     document.querySelectorAll('[data-scheduled-at]').forEach(card => {
         const due = new Date(Number(card.dataset.scheduledAt) * 1000);
-        card.querySelector('.dose-time').textContent = clock.format(due);
-        card.querySelector('.scheduled-date').textContent = fullDate.format(due);
-        card.querySelector('.reminder-day').textContent = `Reminder: ${weekday.format(due)}`;
+        const doseTime = card.querySelector('.dose-time');
+        if (doseTime) doseTime.textContent = clock.format(due);
+        const scheduledDate = card.querySelector('.scheduled-date');
+        scheduledDate.textContent = fullDate.format(due);
+        scheduledDate.dateTime = due.toISOString();
     });
 }
 displayLocalMedicationTimes();
@@ -29,6 +30,7 @@ async function refreshMedicationStatuses() {
         for (const medication of medications) {
             const card = medicationList.querySelector(`[data-medication-id="${medication.id}"]`);
             if (!card) continue;
+            card.dataset.scheduledAt = medication.scheduled_at;
             const badge = card.querySelector('.status');
             badge.className = `status status-${medication.status}`;
             badge.textContent = medication.status[0].toUpperCase() + medication.status.slice(1);
@@ -36,9 +38,12 @@ async function refreshMedicationStatuses() {
             late.textContent = medication.late_label;
             late.hidden = !medication.late_label;
             const button = card.querySelector('.status-form button');
-            button.disabled = medication.status === 'taken';
-            button.textContent = button.disabled ? 'Taken' : 'Mark as taken';
+            if (button) {
+                button.disabled = medication.status === 'taken';
+                button.textContent = button.disabled ? 'Taken' : 'Mark as taken';
+            }
         }
+        displayLocalMedicationTimes();
         feedback.textContent = '';
     } catch {
         feedback.textContent = 'Status updates are temporarily unavailable. Reconnecting...';
