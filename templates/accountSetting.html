@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings</title>
+    <script src="{{ url_for('static', filename='js/accountSetting.js') }}" defer></script>
 </head>
 
 <body>
@@ -34,9 +35,40 @@
                     <strong>Change Password</strong>
                     <p>Update your account password.</p>
                 </div>
-                <button type="button" class="action-button">
-                    Change
+                <button type="button"
+                        id="toggle-password-button"
+                        class="action-button"
+                        aria-expanded="{{ 'true' if error or success else 'false'}}">
+                    {{ 'Cancel' if error or success else 'Change' }}
                 </button>
+            </div>
+
+            <div id="password-form-container" {% if not error and not success %}hidden{% endif %}>
+                {% if error %}
+                    <p class="form-error" role="alert">{{ error }}</p>
+                {% endif %}
+
+                {% if success %}
+                    <p class="form-success" role="status">{{ success }}</p>
+                {% endif %}
+
+                <form action="{{ url_for('main.change_password') }}" method="POST">
+                    <div>
+                        <label for="current_password">Current Password</label>
+                        <input type="password" id="current_password" name="current_password" required>
+                    </div>
+                    <div>
+                        <label for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" required>
+                    </div>
+                    <div>
+                        <label for="confirm_password">Confirm New Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="action-button">
+                        Update Password
+                    </button>
+                </form>
             </div>
             
             <!-- CHANGE PHONE NUMBER -->
@@ -65,11 +97,20 @@
                     <p>Permanently delete your account and associated data.</p>
                 </div>
 
-                <form action="{{ url_for('main.delete_account') }}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to delete your account?')">
+                <button type="button"
+                        id="toggle-delete-button"
+                        class="action-button danger-button"
+                        aria-expanded="false"
+                        aria-controls="delete-form-container">
+                    Delete
+                </button>
+            </div>
+            <div id="delete-form-container" hidden>
+                <p class="form-error">Your account will be permanently removed.</p>
+                <form action="{{ url_for('main.delete_account') }}" method="POST">
                     <button type="submit"
                             class="action-button danger-button">
-                        Delete
+                        Delete My Account
                     </button>
                 </form>
             </div>
@@ -79,9 +120,11 @@
                     <strong>Sign Out</strong>
                     <p>Sign out of your account.</p>
                 </div>
-                <button type="button" class="action-button">
-                    Sign Out
-                </button>
+                <form action="{{ url_for('main.logout') }}" method="POST">
+                    <button type="submit" class="action-button">
+                        Sign Out
+                    </button>
+                </form>
             </div>
         </section>
 
