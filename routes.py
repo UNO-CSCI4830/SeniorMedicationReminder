@@ -314,3 +314,37 @@ def delete_account():
     session.clear()
 
     return redirect(url_for("main.login", msg="Your account has been deleted."))
+
+# allows user to change password
+@main.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    current_password = request.form.get("current_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not current_password or not new_password or not confirm_password:
+        return render_template("accountSetting.html", error="Please fill in all required fields.")
+
+    if current_password == new_password:
+        return render_template("accountSetting.html", error="New password must be different from current password.")
+
+    if len(new_password) < 8:
+        return render_template("accountSetting.html", error="Password must be atleast 8 characters.")
+
+    if new_password != confirm_password:
+        return render_template("accountSetting.html", error="New passwords do not match.")
+
+    db = get_db()
+    user = db.execute("SELECT password_hash FROM users WHERE id = ?", (session["user_id"],)
+        ).fetchone()
+
+    if not user or not check_password_hash(user["password_hash"], current_password):
+        return render_template("accountSetting.html", error="Current password is incorrect.")
+
+    new_hash = generate_password_hash(new_password)
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, session["user_id"])
+        )
+    db.commit()
+
+    return render_template("accountSetting.html", success="Password updated!")
