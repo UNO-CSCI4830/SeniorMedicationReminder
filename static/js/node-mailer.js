@@ -15,12 +15,14 @@ const authentication_ = nodemailer.createTransport({
         user: 'iamerror98@gmail.com',
 
         //put the email and password for the email here. Erased the previous one because I do not want to be hacked.
-        pass: 'xxxxxxxxxx',
+        pass: 'zufn gdxh ingl gbws',
   }
 });
 
 const mail_options = {
     from: 'iamerror98@gmail.com',
+    //You can add multiple recipients by doing this...
+    // to: ['recipient1@example.com', 'recipient2@example.com'],
     to: 'jhamon@unomaha.edu',
     subject: 'Medication Reminder',
     html: html
@@ -32,4 +34,4 @@ authentication_.sendMail(mail_options, (err,info)=> {
     } else {
         console.log(info)
         }
-    })
+    });
