@@ -1,0 +1,68 @@
+"""Track the current scheduled occurrence for each medication."""
+from datetime import datetime, timedelta, timezone
+import time
+from zoneinfo import ZoneInfo
+
+from database import get_db
+
+DAYS = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+
+
+def next_due(day, clock, timezone_name, created_at):
+    zone = ZoneInfo(timezone_name)
+    local = created_at.astimezone(zone)
+    hour, minute = map(int, clock.split(':'))
+    date = local.date()
+    if day is not None:
+        date += timedelta(days=(DAYS.index(day) - local.weekday()) % 7)
+    due = datetime(date.year, date.month, date.day, hour, minute, tzinfo=zone)
+    # Resolve nonexistent spring-forward times by normalizing through UTC.
+    due = due.astimezone(timezone.utc).astimezone(zone)
+    if due.timestamp() < created_at.timestamp():
+        date += timedelta(days=1 if day is None else 7)
+        due = datetime(date.year, date.month, date.day, hour, minute, tzinfo=zone)
+    return int(due.timestamp())
+
+
+def overdue_text(seconds):
+    if seconds < 60:
+        return 'Due less than a minute ago'
+    if seconds < 3600:
+        amount, unit = int(seconds // 60), 'minute'
+    elif seconds < 86400:
+        amount, unit = int(seconds // 3600), 'hour'
+    else:
+        amount, unit = int(seconds // 86400), 'day'
+    return f'Due {amount} {unit}{"s" if amount != 1 else ""} ago'
+
+
+def medication_states(user_id):
+    now = time.time()
+    db = get_db()
+    db.execute("UPDATE medications SET status = 'missed' WHERE user_id = ? AND status = 'upcoming' AND scheduled_at <= ?", (user_id, now))
+    for row in db.execute("SELECT * FROM medications WHERE user_id = ? AND reminder_frequency IN ('daily', 'weekly')", (user_id,)):
+        timezone_name = row['reminder_timezone']
+        zone = ZoneInfo(timezone_name)
+        local_now = datetime.fromtimestamp(now, zone)
+        midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        weekly = row['reminder_frequency'] == 'weekly'
+        interval = timedelta(days=7 if weekly else 1)
+        day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
+        due = next_due(day, row['reminder_time'], timezone_name, midnight)
+        if due > now:
+            midnight -= interval
+            day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
+            due = next_due(day, row['reminder_time'], timezone_name, midnight)
+        if due > row['scheduled_at']:
+            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ? AND user_id = ?", (due, row['id'], user_id))
+    db.commit()
+    medications = []
+    for row in db.execute('SELECT * FROM medications WHERE user_id = ? ORDER BY id DESC', (user_id,)).fetchall():
+        medication = dict(row)
+        local = datetime.fromtimestamp(row['scheduled_at'], ZoneInfo(row['reminder_timezone']))
+        medication['scheduled_time'] = local.strftime('%I:%M %p').lstrip('0')
+        medication['scheduled_iso'] = local.isoformat()
+        medication['scheduled_label'] = local.strftime('%a, %b %d at ') + medication['scheduled_time'] + local.strftime(' %Z')
+        medication['late_label'] = overdue_text(max(0, now - row['scheduled_at'])) if row['status'] == 'missed' else ''
+        medications.append(medication)
+    return medications
