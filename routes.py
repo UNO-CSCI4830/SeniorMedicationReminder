@@ -21,11 +21,6 @@ def login_required(view):
 
     return wrapped_view
 
-# Checks whether a user has a logged-in session
-# Redirects visitors who aren't logged in to the login page
-# Allows logged-in users to continue to the requested page
-# Lets us reuse this check across multiple routes
-
 @main.post('/medications/<int:medication_id>/delete')
 @login_required
 def delete_medication(medication_id):
@@ -38,7 +33,7 @@ def delete_medication(medication_id):
 
 
 @main.route('/')
-@login_required # Tells Flask to check whether someone is logged in before displaying the dashboard
+@login_required
 def home():
     return render_template('index.html', medications=medication_states(session['user_id']))
 
@@ -81,13 +76,6 @@ def signup():
 
     return render_template("signup.html")
 
-# Collects the first name, email, and password
-# Checks that the passwords match
-# Requires a password of at least 8 characters
-# Prevents duplicate email accounts
-# Hashes the password before saving it
-# Sends the user to the login page after successful registration
-
 
 #Login
 @main.route("/login", methods=["GET", "POST"])
@@ -115,18 +103,11 @@ def login():
 
     return render_template("login.html")
 
-# Accepts login submissions through POST
-# Finds the account by email
-# Checks the submitted password against the stored hash
-# Saves the user's ID and first name in their session
-# Redirects successful logins to the dashboard
-
 @main.post("/logout")
 @login_required
 def logout():
     session.clear()
     return redirect(url_for("main.login"))
-# Logs the user out by clearing their session and sends them back to the login page
 
 
 @main.get('/schedule')
@@ -319,6 +300,7 @@ def delete_account():
 @main.route("/change-password", methods=["POST"])
 @login_required
 def change_password():
+
     current_password = request.form.get("current_password", "")
     new_password = request.form.get("new_password", "")
     confirm_password = request.form.get("confirm_password", "")
@@ -326,21 +308,22 @@ def change_password():
     if not current_password or not new_password or not confirm_password:
         return render_template("accountSetting.html", error="Please fill in all required fields.")
 
-    if current_password == new_password:
-        return render_template("accountSetting.html", error="New password must be different from current password.")
-
-    if len(new_password) < 8:
-        return render_template("accountSetting.html", error="Password must be atleast 8 characters.")
-
-    if new_password != confirm_password:
-        return render_template("accountSetting.html", error="New passwords do not match.")
-
     db = get_db()
     user = db.execute("SELECT password_hash FROM users WHERE id = ?", (session["user_id"],)
         ).fetchone()
 
     if not user or not check_password_hash(user["password_hash"], current_password):
         return render_template("accountSetting.html", error="Current password is incorrect.")
+    
+    if current_password == new_password:
+        return render_template("accountSetting.html", error="New password must be different from current password.")
+
+    if len(new_password) < 8:
+        return render_template("accountSetting.html", error="Password must be at least 8 characters.")
+
+    if new_password != confirm_password:
+        return render_template("accountSetting.html", error="New passwords do not match.")
+
 
     new_hash = generate_password_hash(new_password)
     db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, session["user_id"])
