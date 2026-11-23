@@ -43,10 +43,11 @@ def signup():
     if request.method == "POST":
         first_name = request.form.get("firstname", "").strip()
         email = request.form.get("email", "").strip().lower()
+        phone_number = request.form.get("phone_number", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
-        if not first_name or not email or not password:
+        if not first_name or not email or not phone_number or not password:
             return render_template("signup.html", error="Please fill in all required fields.")
 
         if password != confirm_password:
@@ -67,8 +68,8 @@ def signup():
         password_hash = generate_password_hash(password)
 
         db.execute(
-            "INSERT INTO users (first_name, email, password_hash) VALUES (?, ?, ?)",
-            (first_name, email, password_hash)
+            "INSERT INTO users (first_name, email, phone, password_hash) VALUES (?, ?, ?, ?)",
+            (first_name, email, phone_number, password_hash)
         )
         db.commit()
 
