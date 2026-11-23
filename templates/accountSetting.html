@@ -71,18 +71,113 @@
                 </form>
             </div>
             
-            <!-- CHANGE PHONE NUMBER -->
-            <div class="option-row">
-                <div>
-                    <strong>Change Phone Number</strong>
-                    <p>Update the phone number associated with your account.</p>
-                </div>
-
-                <button type="button" class="action-button">
-                    Change
-                </button>
+        <!-- CHANGE PHONE NUMBER -->
+        <div class="option-row">
+            <div>
+                <strong>{{ 'Change Phone Number' if user and user.phone else 'Add Phone Number' }}</strong>
+                <p>
+                    {% if user and user.phone %}
+                        Current number: <span>{{ user.phone }}</span>
+                    {% else %}
+                        Add a phone number to your account.
+                    {% endif %}
+                </p>
             </div>
-        </section>
+
+            <button type="button"
+                    id="toggle-phone-button"
+                    class="action-button"
+                    data-default-label="{{ 'Change' if user and user.phone else 'Add' }}"
+                    aria-expanded="{{ 'true' if phone_error or phone_success else 'false' }}"
+                    aria-controls="phone-form-container">
+                {% if phone_error or phone_success %}
+                    Cancel
+                {% else %}
+                    {{ 'Change' if user and user.phone else 'Add' }}
+                {% endif %}
+            </button>
+        </div>
+
+        <div id="phone-form-container" {% if not phone_error and not phone_success %}hidden{% endif %}>
+            {% if phone_error %}
+                <p class="form-error" role="alert">{{ phone_error }}</p>
+            {% endif %}
+
+            {% if phone_success %}
+                <p class="form-success" role="status">{{ phone_success }}</p>
+            {% endif %}
+
+            <form action="{{ url_for('main.update_phone') }}" method="POST">
+                <div>
+                    <label for="phone_number">
+                        {{ 'New Phone Number' if user and user.phone else 'Phone Number' }}
+                    </label>
+                    <input type="tel"
+                        id="phone_number"
+                        name="phone_number"
+                        placeholder="e.g., 000-000-000"
+                        value="{{ user.phone if user and user.phone else '' }}"
+                        required>
+                </div>
+                <button type="submit" class="action-button">
+                    Save Phone Number
+                </button>
+            </form>
+        </div>
+
+        <!-- ADD / CHANGE GUARDIAN OR CARETAKER EMAIL -->
+        <div class="option-row">
+            <div>
+                <strong>{{ 'Change Guardian / Caretaker Email' if user and user.guardian_email else 'Add Guardian / Caretaker Email' }}</strong>
+                <p>
+                    {% if user and user.guardian_email %}
+                        Current guardian email: <span>{{ user.guardian_email }}</span>
+                    {% else %}
+                        Add an email address for a parent, guardian, or caretaker.
+                    {% endif %}
+                </p>
+            </div>
+
+            <button type="button"
+                    id="toggle-guardian-button"
+                    class="action-button"
+                    data-default-label="{{ 'Change' if user and user.guardian_email else 'Add' }}"
+                    aria-expanded="{{ 'true' if guardian_error or guardian_success else 'false' }}"
+                    aria-controls="guardian-form-container">
+                {% if guardian_error or guardian_success %}
+                    Cancel
+                {% else %}
+                    {{ 'Change' if user and user.guardian_email else 'Add' }}
+                {% endif %}
+            </button>
+        </div>
+
+        <div id="guardian-form-container" {% if not guardian_error and not guardian_success %}hidden{% endif %}>
+            {% if guardian_error %}
+                <p class="form-error" role="alert">{{ guardian_error }}</p>
+            {% endif %}
+
+            {% if guardian_success %}
+                <p class="form-success" role="status">{{ guardian_success }}</p>
+            {% endif %}
+
+            <form action="{{ url_for('main.update_guardian_email') }}" method="POST">
+                <div>
+                    <label for="guardian_email">
+                        {{ 'New Guardian / Caretaker Email' if user and user.guardian_email else 'Guardian / Caretaker Email' }}
+                    </label>
+                    <input type="email"
+                        id="guardian_email"
+                        name="guardian_email"
+                        placeholder="e.g., guardian@example.com"
+                        value="{{ user.guardian_email if user and user.guardian_email else '' }}"
+                        required>
+                </div>
+                <button type="submit" class="action-button">
+                    Save Email
+                </button>
+            </form>
+        </div>
 
         <!-- PRIVACY AND DATA -->
         <section class="profile-card">

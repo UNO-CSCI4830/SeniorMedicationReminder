@@ -45,9 +45,18 @@ def init_db(app):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 first_name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                phone TEXT UNIQUE,
+                guardian_email TEXT COLLATE NOCASE,
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        columns = [row["name"] for row in db.execute("PRAGMA table_info(users)")]
+        if "phone" not in columns:
+            db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+            db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone)")
+        if "guardian_email" not in columns:
+            db.execute("ALTER TABLE users ADD COLUMN guardian_email TEXT COLLATE NOCASE")
         db.execute(f'CREATE TABLE IF NOT EXISTS medications ({MEDICATION_COLUMNS})')
         db.commit()

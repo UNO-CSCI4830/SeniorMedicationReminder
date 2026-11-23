@@ -331,3 +331,65 @@ def change_password():
     db.commit()
 
     return render_template("accountSetting.html", success="Password updated!")
+
+#routes add guardian email
+@main.route("/update-guardian-email", methods=["POST"])
+@login_required
+def update_guardian_email():
+    guardian_email = request.form.get("guardian_email", "").strip().lower()
+
+    db = get_db()
+    user = db.execute(
+        "SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+
+    if not guardian_email:
+        return render_template(
+            "accountSetting.html", user=user, guardian_error="Please fill in all required fields.")
+
+    if user and guardian_email == user["email"].lower():
+        return render_template(
+            "accountSetting.html", user=user, guardian_error="Guardian email must be different from your account email.")
+
+    db.execute(
+        "UPDATE users SET guardian_email = ? WHERE id = ?",
+        (guardian_email, session["user_id"]))
+    db.commit()
+
+    user = db.execute(
+        "SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+
+    return render_template(
+        "accountSetting.html", user=user, guardian_success="Guardian email updated!")
+
+#routes add phone number
+@main.route("/update-phone", methods=["POST"])
+@login_required
+def update_phone():
+    phone = request.form.get("phone_number", "").strip()
+
+    db = get_db()
+    user = db.execute(
+        "SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+
+    if not phone:
+        return render_template("accountSetting.html", user=user, phone_error="Please fill in all required fields.")
+
+    if len(phone) < 10:
+        return render_template("accountSetting.html", user=user, phone_error="Please enter a valid phone number.")
+
+    existing_phone = db.execute(
+        "SELECT id FROM users WHERE phone = ? AND id != ?",
+        (phone, session["user_id"])).fetchone()
+
+    if existing_phone:
+        return render_template("accountSetting.html", user=user, phone_error="An account with that phone number already exists.")
+
+    db.execute(
+        "UPDATE users SET phone = ? WHERE id = ?",
+        (phone, session["user_id"]))
+    db.commit()
+
+    user = db.execute(
+        "SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+
+    return render_template("accountSetting.html", user=user, phone_success="Phone number updated!")
