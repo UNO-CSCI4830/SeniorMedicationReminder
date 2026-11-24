@@ -1,0 +1,52 @@
+{% extends 'index.html' %}
+{% block title %}History | Senior Medication Reminder{% endblock %}
+{% block heading %}Medication History{% endblock %}
+{% block form_script %}{% endblock %}
+{% block medication_dialog %}{% endblock %}
+
+{% block content %}
+<form class="day-agenda history-filters" method="get" action="{{ url_for('main.history') }}">
+    <label class="setting-field">
+        Date range
+        <select name="days">
+            <option value="7"{% if days == 7 %} selected{% endif %}>Last 7 days</option>
+            <option value="30"{% if days == 30 %} selected{% endif %}>Last 30 days</option>
+        </select>
+    </label>
+    <label class="setting-field">
+        Medication
+        <select name="medication">
+            <option value="">All medications</option>
+            {% for id, name in options %}
+            <option value="{{ id }}"{% if id == selected %} selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <button type="submit">Apply filters</button>
+</form>
+
+{% for day, entries in groups.items() %}
+<section class="day-agenda" aria-labelledby="history-{{ day.isoformat() }}">
+    <h2 id="history-{{ day.isoformat() }}">{{ day.strftime('%A, %B') }} {{ day.day }}, {{ day.year }}</h2>
+    <ul class="agenda-reminders">
+        {% for dose, scheduled, recorded in entries %}
+        <li>
+            <div class="medication-details">
+                <strong>{{ dose.name }}</strong>
+                <p>{{ dose.dose_amount }}</p>
+                <p>Scheduled for <time datetime="{{ scheduled.isoformat() }}">{{ scheduled.strftime('%I:%M %p').lstrip('0') }} {{ scheduled.strftime('%Z') }}</time></p>
+            </div>
+            <div class="history-status">
+                <span class="status {{ 'status-taken' if dose.taken else 'status-not-recorded' }}">{{ 'Taken' if dose.taken else 'Not recorded' }}</span>
+                {% if recorded %}
+                <p>Marked <time datetime="{{ recorded.isoformat() }}">{{ recorded.strftime('%b %d at %I:%M %p %Z').replace('at 0', 'at ') }}</time></p>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% else %}
+<p class="day-agenda">No dose history matches these filters.</p>
+{% endfor %}
+{% endblock %}

@@ -39,22 +39,12 @@ def overdue_text(seconds):
 def medication_states(user_id):
     now = time.time()
     db = get_db()
+    db.execute('BEGIN IMMEDIATE')
+    for row in db.execute('SELECT * FROM medications WHERE user_id = ?', (user_id,)).fetchall():
+        due = save_elapsed_doses(db, row, now)
+        if due != row['scheduled_at']:
+            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ?", (due, row['id']))
     db.execute("UPDATE medications SET status = 'missed' WHERE user_id = ? AND status = 'upcoming' AND scheduled_at <= ?", (user_id, now))
-    for row in db.execute("SELECT * FROM medications WHERE user_id = ? AND reminder_frequency IN ('daily', 'weekly')", (user_id,)):
-        timezone_name = row['reminder_timezone']
-        zone = ZoneInfo(timezone_name)
-        local_now = datetime.fromtimestamp(now, zone)
-        midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
-        weekly = row['reminder_frequency'] == 'weekly'
-        interval = timedelta(days=7 if weekly else 1)
-        day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
-        due = next_due(day, row['reminder_time'], timezone_name, midnight)
-        if due > now:
-            midnight -= interval
-            day = row['reminder_day'] if weekly else DAYS[midnight.weekday()]
-            due = next_due(day, row['reminder_time'], timezone_name, midnight)
-        if due > row['scheduled_at']:
-            db.execute("UPDATE medications SET scheduled_at = ?, status = 'missed' WHERE id = ? AND user_id = ?", (due, row['id'], user_id))
     db.commit()
     medications = []
     for row in db.execute('SELECT * FROM medications WHERE user_id = ? ORDER BY id DESC', (user_id,)).fetchall():
@@ -66,3 +56,43 @@ def medication_states(user_id):
         medication['late_label'] = overdue_text(max(0, now - row['scheduled_at'])) if row['status'] == 'missed' else ''
         medications.append(medication)
     return medications
+
+
+def save_dose(db, medication, due, taken, recorded_at=None):
+    db.execute('''
+        INSERT INTO medication_history (
+            user_id, medication_id, scheduled_at, reminder_timezone,
+            name, dose_amount, taken, recorded_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (user_id, medication_id, scheduled_at) DO UPDATE
+        SET taken = excluded.taken, recorded_at = excluded.recorded_at
+        WHERE medication_history.taken = 0 AND excluded.taken = 1
+    ''', (medication['user_id'], medication['id'], due, medication['reminder_timezone'],
+          medication['name'], medication['dose_amount'], taken, recorded_at))
+
+
+def save_elapsed_doses(db, medication, now):
+    """Snapshot elapsed doses and return the most recent scheduled occurrence."""
+    due = medication['scheduled_at']
+    taken = medication['status'] == 'taken'
+    if due > now:
+        if taken:
+            save_dose(db, medication, due, taken)
+        return due
+
+    save_dose(db, medication, due, taken)
+    frequency = medication['reminder_frequency']
+    if frequency == 'once':
+        return due
+
+    zone = ZoneInfo(medication['reminder_timezone'])
+    day = datetime.fromtimestamp(due, zone).date()
+    interval = timedelta(days=1 if frequency == 'daily' else 7)
+    while True:
+        day += interval
+        midnight = datetime.combine(day, datetime.min.time(), tzinfo=zone)
+        next_occurrence = next_due(None, medication['reminder_time'], zone.key, midnight)
+        if next_occurrence > now:
+            return due
+        due = next_occurrence
+        save_dose(db, medication, due, False)

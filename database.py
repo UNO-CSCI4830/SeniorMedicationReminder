@@ -59,4 +59,21 @@ def init_db(app):
         if "guardian_email" not in columns:
             db.execute("ALTER TABLE users ADD COLUMN guardian_email TEXT COLLATE NOCASE")
         db.execute(f'CREATE TABLE IF NOT EXISTS medications ({MEDICATION_COLUMNS})')
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS medication_history (
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                medication_id INTEGER NOT NULL,
+                scheduled_at INTEGER NOT NULL,
+                reminder_timezone TEXT NOT NULL,
+                name TEXT NOT NULL,
+                dose_amount TEXT NOT NULL,
+                taken INTEGER NOT NULL,
+                recorded_at INTEGER,
+                PRIMARY KEY (user_id, medication_id, scheduled_at)
+            )
+        ''')
+        db.execute('''
+            CREATE INDEX IF NOT EXISTS idx_medication_history_date
+            ON medication_history (user_id, scheduled_at)
+        ''')
         db.commit()

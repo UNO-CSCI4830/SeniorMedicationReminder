@@ -42,11 +42,12 @@
         <a href="{{ url_for('main.schedule', month=next_month.isoformat()[:7]) }}">Next month</a>
         {% endif %}
     </nav>
+    <p class="mobile-calendar-key">A badge shows how many reminders are scheduled that day.</p>
     <div class="calendar-scroll" tabindex="0" role="region" aria-label="Monthly medication calendar">
         <table class="month-grid" aria-labelledby="calendar-month">
             <thead><tr>
                 {% for weekday in ('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat') %}
-                <th scope="col">{{ weekday }}</th>
+                <th scope="col" aria-label="{{ weekday }}"><span class="calendar-weekday">{{ weekday }}</span><span class="mobile-calendar-weekday" aria-hidden="true">{{ weekday[:2] }}</span></th>
                 {% endfor %}
             </tr></thead>
             <tbody>
@@ -60,7 +61,7 @@
                            {% if day == selected_day %}aria-current="true"{% endif %}
                            aria-label="{{ day.strftime('%A, %B') }} {{ day.day }}{% if day == today %}, today{% endif %}, {{ count }} {{ 'reminder' if count == 1 else 'reminders' }}">
                             <time datetime="{{ day.isoformat() }}"{% if day == today %} class="calendar-today"{% endif %}>{{ day.day }}</time>
-                            {% if count %}<span>{{ count }} {{ 'reminder' if count == 1 else 'reminders' }}</span>{% endif %}
+                            {% if count %}<span class="calendar-count">{{ count }}<span class="calendar-count-label"> {{ 'reminder' if count == 1 else 'reminders' }}</span></span>{% endif %}
                         </a>
                         {% endif %}
                     </td>

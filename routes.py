@@ -7,7 +7,7 @@ from flask import Blueprint, abort, current_app, jsonify, redirect, render_templ
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import get_db
-from scheduling import DAYS, medication_states, next_due
+from scheduling import DAYS, medication_states, next_due, save_dose, save_elapsed_doses
 
 main = Blueprint('main', __name__)
 
@@ -25,9 +25,14 @@ def login_required(view):
 @login_required
 def delete_medication(medication_id):
     db = get_db()
-    cursor = db.execute('DELETE FROM medications WHERE id = ? AND user_id = ?', (medication_id, session['user_id']))
-    if cursor.rowcount == 0:
+    user_id = session['user_id']
+    db.execute('BEGIN IMMEDIATE')
+    medication = db.execute('SELECT * FROM medications WHERE id = ? AND user_id = ?',
+                            (medication_id, user_id)).fetchone()
+    if medication is None:
         abort(404)
+    save_elapsed_doses(db, medication, datetime.now(timezone.utc).timestamp())
+    db.execute('DELETE FROM medications WHERE id = ? AND user_id = ?', (medication_id, user_id))
     db.commit()
     return redirect(url_for('main.home'), code=303)
 
@@ -170,6 +175,39 @@ def schedule():
                            selected_day=selected_day, agenda=agenda, reminders=reminders)
 
 
+@main.get('/history')
+@login_required
+def history():
+    user_id = session['user_id']
+    medication_states(user_id)
+    zone = ZoneInfo(current_app.config['REMINDER_TIMEZONE'])
+    now = datetime.now(zone)
+    days = request.args.get('days', 7, type=int)
+    if days not in (7, 30):
+        days = 7
+    selected = request.args.get('medication', type=int)
+    first_day = now.date() - timedelta(days=days - 1)
+    start = datetime.combine(now.date() - timedelta(days=29), time.min, tzinfo=zone).timestamp()
+    rows = get_db().execute('''
+        SELECT * FROM medication_history
+        WHERE user_id = ? AND scheduled_at BETWEEN ? AND ?
+        ORDER BY scheduled_at DESC, name COLLATE NOCASE, medication_id
+    ''', (user_id, start, now.timestamp()))
+    groups = {}
+    options = {}
+    for row in rows:
+        options.setdefault(row['medication_id'], row['name'])
+        if selected is not None and row['medication_id'] != selected:
+            continue
+        scheduled = datetime.fromtimestamp(row['scheduled_at'], zone)
+        if scheduled.date() < first_day:
+            continue
+        recorded = datetime.fromtimestamp(row['recorded_at'], zone) if row['recorded_at'] is not None else None
+        groups.setdefault(scheduled.date(), []).append((row, scheduled, recorded))
+    return render_template('history.html', groups=groups, days=days, selected=selected,
+                           options=sorted(options.items(), key=lambda item: item[1].casefold()))
+
+
 @main.get('/api/medications/statuses')
 @login_required
 def medication_statuses():
@@ -218,6 +256,9 @@ def add_medication(medication_id=None):
         ZoneInfo(zone)
     except (ZoneInfoNotFoundError, ValueError):
         return jsonify(error='Choose a valid reminder timezone.'), 400
+    now = datetime.now(timezone.utc)
+    if existing:
+        save_elapsed_doses(db, existing, now.timestamp())
     if (existing and existing['reminder_frequency'] == frequency
             and existing['reminder_time'] == time and existing['reminder_timezone'] == zone
             and (frequency == 'daily' or existing['reminder_day'] == day)):
@@ -226,25 +267,28 @@ def add_medication(medication_id=None):
         db.commit()
         return jsonify(id=medication_id, status=existing['status'])
 
-    now = datetime.now(timezone.utc)
     due = next_due(None if frequency == 'daily' else day, time, zone, now)
     if frequency == 'daily':
         day = DAYS[datetime.fromtimestamp(due, ZoneInfo(zone)).weekday()]
     values = (name.strip(), dose.strip(), day, time, due, zone, frequency)
     if existing:
+        status = 'taken' if existing['status'] == 'taken' and existing['scheduled_at'] == due else 'upcoming'
         db.execute('''
             UPDATE medications
             SET name = ?, dose_amount = ?, reminder_day = ?, reminder_time = ?,
                 scheduled_at = ?, reminder_timezone = ?, reminder_frequency = ?,
-                status = 'upcoming', created_at = ?
+                status = ?, created_at = ?
             WHERE id = ? AND user_id = ?
-        ''', (*values, now.strftime('%Y-%m-%d %H:%M:%S'), medication_id, user_id))
+        ''', (*values, status, now.strftime('%Y-%m-%d %H:%M:%S'), medication_id, user_id))
         db.commit()
-        return jsonify(id=medication_id, status='upcoming')
+        return jsonify(id=medication_id, status=status)
 
+    # Keep IDs distinct from medications that survive only in history.
     cursor = db.execute(
-        'INSERT INTO medications (name, dose_amount, reminder_day, reminder_time, scheduled_at, '
-        'reminder_timezone, reminder_frequency, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO medications (id, name, dose_amount, reminder_day, reminder_time, scheduled_at, '
+        'reminder_timezone, reminder_frequency, user_id) VALUES ('
+        'MAX(COALESCE((SELECT MAX(id) FROM medications), 0), '
+        'COALESCE((SELECT MAX(medication_id) FROM medication_history), 0)) + 1, ?, ?, ?, ?, ?, ?, ?, ?)',
         (*values, user_id),
     )
     db.commit()
@@ -258,9 +302,19 @@ def update_status(medication_id):
     if status != 'taken':
         abort(400, description='Use Mark as taken to confirm this medication.')
     db = get_db()
-    cursor = db.execute('UPDATE medications SET status = ? WHERE id = ? AND user_id = ?', (status, medication_id, session['user_id']))
-    if cursor.rowcount == 0:
+    user_id = session['user_id']
+    db.execute('BEGIN IMMEDIATE')
+    medication = db.execute('SELECT * FROM medications WHERE id = ? AND user_id = ?',
+                            (medication_id, user_id)).fetchone()
+    if medication is None:
         abort(404)
+    expected = request.form.get('scheduled_at')
+    if expected is not None and expected != str(medication['scheduled_at']):
+        abort(409, description='This reminder has changed. Return to the dashboard and check the scheduled dose.')
+    if medication['status'] != 'taken':
+        recorded_at = int(datetime.now(timezone.utc).timestamp())
+        save_dose(db, medication, medication['scheduled_at'], True, recorded_at)
+        db.execute('UPDATE medications SET status = ? WHERE id = ? AND user_id = ?', (status, medication_id, user_id))
     db.commit()
     return redirect(url_for('main.home'), code=303)
 
