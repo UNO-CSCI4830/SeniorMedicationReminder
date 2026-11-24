@@ -39,6 +39,7 @@ async function refreshMedicationStatuses() {
             late.hidden = !medication.late_label;
             const button = card.querySelector('.status-form button');
             if (button) {
+                button.form.elements.scheduled_at.value = medication.scheduled_at;
                 button.disabled = medication.status === 'taken';
                 button.textContent = button.disabled ? 'Taken' : 'Mark as taken';
             }

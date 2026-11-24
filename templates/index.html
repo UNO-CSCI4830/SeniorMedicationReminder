@@ -17,6 +17,7 @@
             <nav aria-label="Main navigation">
                 <a class="nav-link{% if request.endpoint == 'main.home' %} active{% endif %}" href="{{ url_for('main.home') }}"{% if request.endpoint == 'main.home' %} aria-current="page"{% endif %}>Dashboard</a>
                 <a class="nav-link{% if request.endpoint == 'main.schedule' %} active{% endif %}" href="{{ url_for('main.schedule') }}"{% if request.endpoint == 'main.schedule' %} aria-current="page"{% endif %}>Schedule</a>
+                <a class="nav-link{% if request.endpoint == 'main.history' %} active{% endif %}" href="{{ url_for('main.history') }}"{% if request.endpoint == 'main.history' %} aria-current="page"{% endif %}>History</a>
             </nav>
 
             <!--The drop up menu when clicking on the account-->
@@ -31,7 +32,7 @@
                         aria-expanded="false" aria-controls="account-menu">
                     <span class="avatar" aria-hidden="true">SM</span>
                     <span>
-                        <strong>My Account</strong>
+                        <strong><span class="account-prefix">My </span>Account</strong>
                         <small>Demo profile</small>
                     </span>
                 </button>
@@ -42,7 +43,7 @@
         </aside>
         <main class="dashboard-main">
             <header class="dashboard-header">
-                <h1>{% block heading %}My Medication Reminder{% endblock %}</h1>
+                <h1>{% block heading %}<span class="desktop-medications-title">My Medication Reminder</span><span class="mobile-medications-title">My Medications</span>{% endblock %}</h1>
                 <button class="settings-button" id="open-settings" type="button" aria-haspopup="dialog" aria-controls="accessibility-settings">
                     <span aria-hidden="true">&#9881;</span> Text Sizes
                 </button>
@@ -73,6 +74,7 @@
                         <div class="medication-actions">
                             <form class="status-form" action="{{ url_for('main.update_status', medication_id=medication.id) }}" method="post">
                                 <input type="hidden" name="status" value="taken">
+                                <input type="hidden" name="scheduled_at" value="{{ medication.scheduled_at }}">
                                 <button type="submit" aria-label="Mark {{ medication.name }} as taken" {% if medication.status == 'taken' %}disabled{% endif %}>{{ 'Taken' if medication.status == 'taken' else 'Mark as taken' }}</button>
                             </form>
                             <button class="edit-medication-button" type="button"
@@ -142,32 +144,34 @@
     </dialog>
     {% endblock %}
     <dialog id="accessibility-settings" aria-labelledby="settings-title" aria-describedby="settings-description">
-        <h2 id="settings-title">Accessibility settings</h2>
-        <p id="settings-description">Changes apply immediately and are saved in this browser.</p>
-        <label class="setting-field" for="text-size">Text size
-            <select id="text-size">
-                <option value="100">Standard (100%)</option>
-                <option value="125">Large (125%)</option>
-                <option value="150">Extra large (150%)</option>
-                <option value="200">Largest (200%)</option>
-            </select>
-        </label>
-        <label class="setting-toggle"><input id="bold-text" type="checkbox"> Bold text</label>
-        <label class="setting-field" for="color-palette">Color palette
-            <select id="color-palette" aria-describedby="palette-help">
-                <option value="default">Default</option>
-                <option value="blue-orange">Blue and orange</option>
-                <option value="purple-teal">Purple and teal</option>
-                <option value="grayscale">Grayscale</option>
-            </select>
-        </label>
-        <p id="palette-help">Choose the colors you find easiest to distinguish. Status labels and symbols stay visible in every palette.</p>
-        <div class="palette-preview" aria-label="Status color preview">
-            <span class="status status-taken"><span aria-hidden="true">&#10003; </span>Taken</span>
-            <span class="status status-missed"><span aria-hidden="true">&#10005; </span>Missed</span>
-            <span class="status status-upcoming"><span aria-hidden="true">&#9719; </span>Upcoming</span>
+        <div class="settings-content">
+            <h2 id="settings-title">Accessibility settings</h2>
+            <p id="settings-description">Changes apply immediately and are saved in this browser.</p>
+            <label class="setting-field" for="text-size">Text size
+                <select id="text-size">
+                    <option value="100">Standard (100%)</option>
+                    <option value="125">Large (125%)</option>
+                    <option value="150">Extra large (150%)</option>
+                    <option value="200">Largest (200%)</option>
+                </select>
+            </label>
+            <label class="setting-toggle"><input id="bold-text" type="checkbox"> Bold text</label>
+            <label class="setting-field" for="color-palette">Color palette
+                <select id="color-palette" aria-describedby="palette-help">
+                    <option value="default">Default</option>
+                    <option value="blue-orange">Blue and orange</option>
+                    <option value="purple-teal">Purple and teal</option>
+                    <option value="grayscale">Grayscale</option>
+                </select>
+            </label>
+            <p id="palette-help">Choose the colors you find easiest to distinguish. Status labels and symbols stay visible in every palette.</p>
+            <div class="palette-preview" aria-label="Status color preview">
+                <span class="status status-taken"><span aria-hidden="true">&#10003; </span>Taken</span>
+                <span class="status status-missed"><span aria-hidden="true">&#10005; </span>Missed</span>
+                <span class="status status-upcoming"><span aria-hidden="true">&#9719; </span>Upcoming</span>
+            </div>
+            <p id="settings-feedback" role="status" aria-live="polite"></p>
         </div>
-        <p id="settings-feedback" role="status" aria-live="polite"></p>
         <div class="settings-actions">
             <button id="reset-settings" type="button">Reset to defaults</button>
             <button id="close-settings" type="button">Done</button>
